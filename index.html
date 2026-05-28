@@ -5,61 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>採用KPI管理ダッシュボード｜株式会社アカリエ</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#f5f4f0;--surface:#fff;--s2:#f0efe9;--border:rgba(0,0,0,.08);--b2:rgba(0,0,0,.14);
-  --text:#1a1a18;--t2:#5a5a56;--t3:#9a9a94;
+  --bg:#f5f4f0;--sur:#fff;--s2:#f0efe9;--bd:rgba(0,0,0,.08);--b2:rgba(0,0,0,.14);
+  --tx:#1a1a18;--t2:#5a5a56;--t3:#9a9a94;
   --blue:#2563eb;--bl:#dbeafe;--green:#16a34a;--gl:#dcfce7;
   --red:#dc2626;--rl:#fee2e2;--amber:#d97706;--al:#fef3c7;
-  --accent:#1e3a5f;--r:10px;--rs:6px;
+  --acc:#1e3a5f;--r:10px;--rs:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
-
-/* HEADER */
-.hd{background:var(--accent);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
-.hd-l .hd-title{font-size:17px;font-weight:700}
-.hd-l .hd-sub{font-size:11px;opacity:.6;margin-top:1px}
+body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
+.hd{background:var(--acc);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.hd-title{font-size:17px;font-weight:700}
+.hd-sub{font-size:11px;opacity:.6;margin-top:1px}
 .hd-r{display:flex;gap:6px;flex-wrap:wrap}
-.btn{padding:6px 14px;border-radius:var(--rs);border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;white-space:nowrap}
-.btn-w{background:#fff;color:var(--accent)}
+.btn{padding:6px 14px;border-radius:var(--rs);border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;white-space:nowrap;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-w{background:#fff;color:var(--acc)}
 .btn-o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
 .btn-g{background:#16a34a;color:#fff}
-.btn-a{background:var(--accent);color:#fff}
-.btn:hover{opacity:.85}
-
-/* LAYOUT */
+.btn-a{background:var(--acc);color:#fff}
 .con{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem}
 .sec{margin-bottom:1.75rem}
-.sec-ttl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem;display:flex;align-items:center;gap:6px}
-.card{background:var(--surface);border:.5px solid var(--b2);border-radius:var(--r);padding:1.1rem 1.25rem}
+.sec-ttl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem}
+.card{background:var(--sur);border:.5px solid var(--b2);border-radius:var(--r);padding:1.1rem 1.25rem}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
 
-/* SYNC BAR */
-.sync-bar{background:var(--bl);border:1px solid #93c5fd;border-radius:var(--rs);padding:.75rem 1.1rem;margin-bottom:1.25rem;display:none}
-.sync-bar.open{display:block}
-.sync-ttl{font-size:12px;font-weight:700;color:#1e40af;margin-bottom:.6rem}
-.sync-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:.6rem}
-.sf{display:flex;flex-direction:column;gap:3px}
-.sf label{font-size:10px;color:#1e40af;font-weight:700}
-.sf input{border:.5px solid #93c5fd;border-radius:var(--rs);padding:5px 8px;font-size:12px;background:#fff;color:var(--text);outline:none;width:100%}
-.sf input:focus{border-color:var(--blue)}
-.sync-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.ss-badge{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--al);color:#78350f}
-.ss-badge.ok{background:var(--gl);color:#14532d}
-.ss-badge.err{background:var(--rl);color:#7f1d1d}
+/* DROP ZONE */
+.drop-zone{border:2px dashed #93c5fd;border-radius:var(--r);padding:2rem;text-align:center;background:var(--bl);margin-bottom:1.5rem;transition:all .2s;cursor:pointer}
+.drop-zone.dragover{background:#bfdbfe;border-color:var(--blue)}
+.drop-zone.hidden{display:none}
+.drop-icon{font-size:2.5rem;margin-bottom:.5rem}
+.drop-title{font-size:15px;font-weight:700;color:#1e40af;margin-bottom:.25rem}
+.drop-sub{font-size:12px;color:#3b82f6}
+.drop-input{display:none}
+.import-log{background:var(--sur);border:.5px solid var(--b2);border-radius:var(--rs);padding:.75rem 1rem;margin-bottom:1.5rem;font-size:12px;color:var(--t2);max-height:120px;overflow-y:auto;display:none}
+.import-log.show{display:block}
+.log-ok{color:var(--green)}.log-err{color:var(--red)}.log-info{color:var(--t3)}
 
-/* KPI CARDS */
+/* STATUS BAR */
+.status-bar{background:var(--gl);border:1px solid #86efac;border-radius:var(--rs);padding:.6rem 1rem;margin-bottom:1.25rem;font-size:12px;color:#14532d;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;display:none}
+.status-bar.show{display:flex}
+
+/* KPI */
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
 .kpi{background:var(--s2);border-radius:var(--rs);padding:.9rem 1rem;min-width:0}
-.kpi-lbl{font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.04em;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kpi-val{font-size:20px;font-weight:700;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi-lbl{font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.04em;margin-bottom:3px}
+.kpi-val{font-size:19px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpi-sub{font-size:10px;color:var(--t3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kpi.danger .kpi-val{color:var(--red)}
-.kpi.success .kpi-val{color:var(--green)}
-.kpi.warn .kpi-val{color:var(--amber)}
+.kpi.danger .kpi-val{color:var(--red)}.kpi.success .kpi-val{color:var(--green)}.kpi.warn .kpi-val{color:var(--amber)}
 
 /* ALERTS */
 .alert{border-radius:var(--rs);padding:9px 13px;display:flex;gap:9px;margin-bottom:7px;font-size:13px;align-items:flex-start}
@@ -68,48 +64,47 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 .alert.warn{background:var(--al);color:#78350f}
 
 /* FUNNEL */
-.fn-hd,.fn-row{display:grid;grid-template-columns:90px 1fr 60px 60px 60px 60px;gap:6px;align-items:center;padding:5px 0;border-bottom:.5px solid var(--border);font-size:12px}
-.fn-hd{font-size:10px;color:var(--t3);font-weight:700;letter-spacing:.03em}
+.fn-hd,.fn-row{display:grid;grid-template-columns:90px 1fr 60px 60px 60px 60px;gap:6px;align-items:center;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px}
+.fn-hd{font-size:10px;color:var(--t3);font-weight:700}
 .fn-row:last-child{border-bottom:none}
 .bw{height:7px;background:var(--s2);border-radius:4px;overflow:hidden}
 .bf{height:100%;border-radius:4px}
 .cr{text-align:right}
 .neg{color:var(--red)}.pos{color:var(--green)}.wrn{color:var(--amber)}
 
-/* INFO ROWS */
-.ir{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:.5px solid var(--border);font-size:13px;min-width:0}
+/* INFO ROW */
+.ir{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:.5px solid var(--bd);font-size:13px;min-width:0}
 .ir:last-child{border-bottom:none}
 .ir-k{color:var(--t2);flex-shrink:0;margin-right:.5rem}
-.ir-v{font-weight:700;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ir-v{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prog-w{height:5px;background:var(--s2);border-radius:3px;overflow:hidden;margin-top:7px}
 .prog-f{height:100%;border-radius:3px}
 
 /* TABLES */
 .tbl{width:100%;border-collapse:collapse;font-size:12px}
-.tbl th{font-size:10px;font-weight:700;color:var(--t3);text-align:right;padding:5px 7px;border-bottom:.5px solid var(--b2);letter-spacing:.03em;white-space:nowrap}
+.tbl th{font-size:10px;font-weight:700;color:var(--t3);text-align:right;padding:5px 7px;border-bottom:.5px solid var(--b2);white-space:nowrap}
 .tbl th:first-child{text-align:left}
-.tbl td{padding:6px 7px;text-align:right;border-bottom:.5px solid var(--border);white-space:nowrap}
+.tbl td{padding:6px 7px;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap}
 .tbl td:first-child{text-align:left;font-weight:600}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr.total td{font-weight:700;background:var(--s2)}
-.tbl tr.current td{background:#fffbeb}
+.tbl tr.hi td{background:#fffbeb}
 .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
 .bg-g{background:var(--gl);color:#14532d}.bg-r{background:var(--rl);color:#7f1d1d}.bg-a{background:var(--al);color:#78350f}
 
 /* BRANCH KPI */
-.branch-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
-.branch-kpi{background:var(--s2);border-radius:var(--rs);padding:.85rem 1rem;min-width:0}
-.bk-name{font-size:12px;font-weight:700;margin-bottom:.5rem;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.bk{background:var(--s2);border-radius:var(--rs);padding:.85rem 1rem;min-width:0}
+.bk-name{font-size:12px;font-weight:700;color:var(--acc);margin-bottom:.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bk-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0}
-.bk-k{color:var(--t2)}
-.bk-v{font-weight:700;white-space:nowrap}
-.bk-prog{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:5px}
-.bk-prog-f{height:100%;border-radius:2px}
+.bk-k{color:var(--t2)}.bk-v{font-weight:700;white-space:nowrap}
+.bk-bar{height:4px;background:var(--bd);border-radius:2px;overflow:hidden;margin-top:5px}
+.bk-bar-f{height:100%;border-radius:2px}
 
-/* TABS / CHARTS */
+/* TABS */
 .tabs{display:flex;gap:4px;margin-bottom:.9rem;flex-wrap:wrap}
 .tab{font-size:11px;padding:4px 12px;border-radius:20px;border:.5px solid var(--b2);cursor:pointer;color:var(--t2);background:transparent;font-family:inherit}
-.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab.active{background:var(--acc);color:#fff;border-color:var(--acc)}
 .tab:hover:not(.active){background:var(--s2)}
 .cp{display:none}.cp.active{display:block}
 .cw{position:relative;width:100%}
@@ -117,76 +112,74 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 .leg-i{display:flex;align-items:center;gap:4px}
 .leg-d{width:10px;height:10px;border-radius:2px}
 
-/* SIMULATION */
+/* SIM */
 .sl-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 .sl-lbl{font-size:11px;color:var(--t2);min-width:90px}
-.sl-row input[type=range]{flex:1;accent-color:var(--accent)}
+.sl-row input[type=range]{flex:1;accent-color:var(--acc)}
 .sl-val{font-size:11px;font-weight:700;min-width:34px;text-align:right}
 .sim-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.9rem}
 .sim-card{background:var(--s2);border-radius:var(--rs);padding:.75rem;text-align:center}
 .sim-lbl{font-size:10px;color:var(--t3);font-weight:700;margin-bottom:3px}
 .sim-val{font-size:18px;font-weight:700}
 
-/* INPUT PANEL */
-.inp-panel{background:var(--surface);border:.5px solid var(--b2);border-radius:var(--r);margin-bottom:1.5rem;overflow:hidden;display:none}
-.inp-panel.open{display:block}
-.inp-hd{background:var(--accent);color:#fff;padding:10px 1.25rem;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
-.inp-body{padding:1.1rem 1.25rem}
-.inp-sec-ttl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;border-bottom:.5px solid var(--border);padding-bottom:5px;margin-bottom:9px;margin-top:14px}
-.inp-sec-ttl:first-child{margin-top:0}
-.inp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
-.if{display:flex;flex-direction:column;gap:3px}
-.if label{font-size:10px;color:var(--t2);font-weight:600}
-.if input,.if select{border:.5px solid var(--b2);border-radius:var(--rs);padding:6px 8px;font-size:12px;background:var(--s2);color:var(--text);outline:none;width:100%}
-.if input:focus,.if select:focus{border-color:var(--blue);background:#fff}
-.month-inp-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
-.mc{display:flex;flex-direction:column;gap:3px}
-.mc-lbl{font-size:11px;font-weight:700;text-align:center;color:var(--t2)}
-.mc-sub{font-size:9px;color:var(--t3);text-align:center}
-.mc input{border:.5px solid var(--b2);border-radius:var(--rs);padding:4px 5px;font-size:11px;background:var(--s2);color:var(--text);text-align:center;width:100%;outline:none}
-.mc input:focus{border-color:var(--blue);background:#fff}
-.btn-apply{background:var(--accent);color:#fff;padding:8px 22px;border-radius:var(--rs);border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit}
-
 /* REPORT */
 .rpt-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;overflow-y:auto;padding:1.5rem;justify-content:center}
 .rpt-modal.open{display:flex}
 .rpt-inner{background:#fff;border-radius:var(--r);padding:2rem;max-width:820px;width:100%;position:relative;height:fit-content}
 .rpt-close{position:absolute;top:.9rem;right:.9rem;background:none;border:none;font-size:20px;cursor:pointer;color:var(--t3)}
-.rpt h1{font-size:17px;font-weight:700;color:var(--accent);margin-bottom:.25rem}
-.rpt h2{font-size:13px;font-weight:700;border-left:3px solid var(--accent);padding-left:.5rem;margin:1.1rem 0 .4rem}
+.rpt h1{font-size:17px;font-weight:700;color:var(--acc);margin-bottom:.25rem}
+.rpt h2{font-size:13px;font-weight:700;border-left:3px solid var(--acc);padding-left:.5rem;margin:1.1rem 0 .4rem}
 .rpt p{font-size:12px;color:var(--t2);line-height:1.8;margin-bottom:.4rem}
 .rpt-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:.75rem 0}
 .rk{background:var(--s2);border-radius:var(--rs);padding:.6rem;text-align:center}
 .rk-l{font-size:9px;color:var(--t3);font-weight:700;margin-bottom:2px}
-.rk-v{font-size:16px;font-weight:700;color:var(--accent)}
+.rk-v{font-size:16px;font-weight:700;color:var(--acc)}
 .rpt-tbl{width:100%;border-collapse:collapse;font-size:11px;margin:.6rem 0}
-.rpt-tbl th{background:var(--accent);color:#fff;padding:5px 8px;text-align:right;white-space:nowrap}
+.rpt-tbl th{background:var(--acc);color:#fff;padding:5px 8px;text-align:right;white-space:nowrap}
 .rpt-tbl th:first-child{text-align:left}
-.rpt-tbl td{padding:5px 8px;text-align:right;border-bottom:.5px solid var(--border);white-space:nowrap}
+.rpt-tbl td{padding:5px 8px;text-align:right;border-bottom:.5px solid var(--bd);white-space:nowrap}
 .rpt-tbl td:first-child{text-align:left;font-weight:600}
 .rpt-tbl tr:last-child td{font-weight:700;background:var(--s2)}
 
-@media print{.hd,.sync-bar,.inp-panel,.sec-ttl,.tabs,.sl-row,.rpt-modal{display:none!important}.rpt-inner{padding:0;box-shadow:none}}
+/* MANUAL INPUT */
+.inp-panel{background:var(--sur);border:.5px solid var(--b2);border-radius:var(--r);margin-bottom:1.5rem;overflow:hidden;display:none}
+.inp-panel.open{display:block}
+.inp-hd{background:var(--acc);color:#fff;padding:10px 1.25rem;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.inp-body{padding:1.1rem 1.25rem}
+.inp-ttl{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;border-bottom:.5px solid var(--bd);padding-bottom:5px;margin-bottom:9px;margin-top:14px}
+.inp-ttl:first-child{margin-top:0}
+.inp-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.if{display:flex;flex-direction:column;gap:3px}
+.if label{font-size:10px;color:var(--t2);font-weight:600}
+.if input{border:.5px solid var(--b2);border-radius:var(--rs);padding:6px 8px;font-size:12px;background:var(--s2);color:var(--tx);outline:none;width:100%}
+.if input:focus{border-color:var(--blue);background:#fff}
+.m-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.mc{display:flex;flex-direction:column;gap:3px}
+.mc-lbl{font-size:11px;font-weight:700;text-align:center;color:var(--t2)}
+.mc-sub{font-size:9px;color:var(--t3);text-align:center}
+.mc input{border:.5px solid var(--b2);border-radius:var(--rs);padding:4px 5px;font-size:11px;background:var(--s2);color:var(--tx);text-align:center;width:100%;outline:none}
+.mc input:focus{border-color:var(--blue);background:#fff}
+.btn-apply{background:var(--acc);color:#fff;padding:8px 22px;border-radius:var(--rs);border:none;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit}
+
+@media print{.hd,.drop-zone,.import-log,.status-bar,.inp-panel,.tabs,.sl-row,.sec-ttl{display:none!important}}
 @media(max-width:700px){
-  .g2,.g3,.g4{grid-template-columns:1fr}
-  .sync-grid{grid-template-columns:1fr 1fr}
+  .g2,.g3{grid-template-columns:1fr}
   .fn-hd,.fn-row{grid-template-columns:75px 1fr 50px 50px}
   .fn-hd>span:nth-child(5),.fn-hd>span:nth-child(6),.fn-row>span:nth-child(5),.fn-row>span:nth-child(6){display:none}
-  .month-inp-grid{grid-template-columns:repeat(3,1fr)}
-  .kpi-val{font-size:17px}
+  .m-grid{grid-template-columns:repeat(3,1fr)}
+  .kpi-val{font-size:16px}
 }
 </style>
 </head>
 <body>
 
 <div class="hd">
-  <div class="hd-l">
+  <div>
     <div class="hd-title">採用KPI管理ダッシュボード｜株式会社アカリエ</div>
     <div class="hd-sub" id="hd-date"></div>
   </div>
   <div class="hd-r">
-    <button class="btn btn-o" onclick="toggleSync()">🔗 スプシ連携</button>
-    <button class="btn btn-g" onclick="fetchSheets()">🔄 更新</button>
+    <button class="btn btn-g" id="btn-drop" onclick="G('drop-zone').classList.toggle('hidden')">📂 Excelを取り込む</button>
     <button class="btn btn-o" onclick="toggleInput()">✏️ 手動入力</button>
     <button class="btn btn-w" onclick="openReport()">📄 年間レポート</button>
     <button class="btn btn-o" onclick="window.print()">🖨 印刷</button>
@@ -195,80 +188,57 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 
 <div class="con">
 
-<!-- SYNC BAR -->
-<div class="sync-bar" id="sync-bar">
-  <div class="sync-ttl">🔗 Googleスプレッドシート連携（「リンクを知っている全員が閲覧可能」に設定してください）</div>
-  <div class="sync-grid">
-    <div class="sf"><label>応募者管理 スプレッドシートID</label><input id="ss1" value="1PXJXKVZNwovcnlRtbbwF66rGElSkivnmu8hJOq1KTAo"></div>
-    <div class="sf"><label>応募者管理 シートGID</label><input id="gid1" value="1324591651"></div>
-    <div class="sf"><label>実績報告 スプレッドシートID</label><input id="ss2" value="1KAU-dfHFKGfQgbn59xuCK8Exo2CujIYhM3rwgAZadyU"></div>
-    <div class="sf"><label>実績報告 シートGID</label><input id="gid2" value="1598129415"></div>
-  </div>
-  <div class="sync-actions">
-    <button class="btn btn-a" onclick="saveSync();fetchSheets()">✅ 保存して取得</button>
-    <button class="btn" style="background:var(--s2);color:var(--t2)" onclick="toggleSync()">閉じる</button>
-    <span class="ss-badge" id="ss-badge">未取得</span>
-  </div>
+<!-- DROP ZONE -->
+<div class="drop-zone hidden" id="drop-zone"
+  ondragover="event.preventDefault();this.classList.add('dragover')"
+  ondragleave="this.classList.remove('dragover')"
+  ondrop="handleDrop(event)"
+  onclick="G('file-input').click()">
+  <div class="drop-icon">📊</div>
+  <div class="drop-title">実績報告Excelをドロップ、またはクリックして選択</div>
+  <div class="drop-sub">【実績報告】株式会社アカリエ様_2026_04-2027_03.xlsx などのファイルに対応<br>月タブ（4月・5月…）を自動検出して年間データを蓄積します</div>
+  <input type="file" id="file-input" class="drop-input" accept=".xlsx,.xls" onchange="handleFile(this.files[0])">
 </div>
 
-<!-- MANUAL INPUT PANEL -->
+<!-- IMPORT LOG -->
+<div class="import-log" id="import-log"></div>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="status-bar">
+  <span id="status-text">データ読み込み済み</span>
+  <button class="btn" style="background:var(--gl);color:#14532d;border:1px solid #86efac;font-size:11px;padding:3px 10px" onclick="clearData()">🗑 データをリセット</button>
+</div>
+
+<!-- MANUAL INPUT -->
 <div class="inp-panel" id="inp-panel">
   <div class="inp-hd">
-    <span>✏️ 年間データ手動入力</span>
+    <span>✏️ 手動入力（Excelがない場合）</span>
     <button class="btn btn-o" style="padding:3px 10px;font-size:11px" onclick="toggleInput()">閉じる</button>
   </div>
   <div class="inp-body">
-    <div class="inp-sec-ttl">基本設定</div>
-    <div class="inp-grid">
+    <div class="inp-ttl">基本設定</div>
+    <div class="inp-g">
       <div class="if"><label>年間採用目標（名）</label><input type="number" id="cfg-target" value="94"></div>
-      <div class="if"><label>期初年月（例: 2026/04）</label><input type="text" id="cfg-start" value="2026/04"></div>
-      <div class="if"><label>昨年応募単価（円）</label><input type="number" id="cfg-app-unit" value="12773"></div>
-      <div class="if"><label>昨年採用単価（円）</label><input type="number" id="cfg-hire-unit" value="199080"></div>
+      <div class="if"><label>昨年応募単価（円）</label><input type="number" id="cfg-apu" value="12773"></div>
+      <div class="if"><label>昨年採用単価（円）</label><input type="number" id="cfg-hpu" value="199080"></div>
     </div>
-
-    <div class="inp-sec-ttl">月別実績（12ヶ月分）</div>
-    <div class="month-inp-grid" id="month-inp-grid"></div>
-
-    <div class="inp-sec-ttl">拠点別データ（最大10拠点）</div>
-    <div id="branch-inp"></div>
-
-    <div class="inp-sec-ttl">媒体別データ（最大8媒体）</div>
-    <div id="media-inp"></div>
-
-    <div class="inp-sec-ttl">採用ファネル（今期累計）</div>
-    <div class="inp-grid" id="funnel-inp"></div>
-
-    <div class="inp-sec-ttl">年代別応募・採用（今期累計）</div>
-    <div class="inp-grid">
-      <div class="if"><label>20代 応募数</label><input type="number" id="ag20a" value="94"></div>
-      <div class="if"><label>20代 採用数</label><input type="number" id="ag20h" value="8"></div>
-      <div class="if"><label>30代 応募数</label><input type="number" id="ag30a" value="67"></div>
-      <div class="if"><label>30代 採用数</label><input type="number" id="ag30h" value="7"></div>
-      <div class="if"><label>40代 応募数</label><input type="number" id="ag40a" value="37"></div>
-      <div class="if"><label>40代 採用数</label><input type="number" id="ag40h" value="3"></div>
-      <div class="if"><label>50代 応募数</label><input type="number" id="ag50a" value="10"></div>
-      <div class="if"><label>50代 採用数</label><input type="number" id="ag50h" value="1"></div>
-    </div>
-
-    <div style="margin-top:1rem;padding-top:1rem;border-top:.5px solid var(--border);display:flex;gap:8px;align-items:center">
-      <button class="btn-apply" onclick="applyInput()">✅ ダッシュボードに反映</button>
-      <button class="btn" style="background:var(--s2);color:var(--t2);font-size:12px" onclick="resetToSample()">サンプルに戻す</button>
-      <span style="font-size:11px;color:var(--t3)">入力内容はブラウザに保存されます</span>
+    <div class="inp-ttl">月別実績（12ヶ月）</div>
+    <div class="m-grid" id="m-grid"></div>
+    <div class="inp-ttl">採用ファネル（今期累計）</div>
+    <div class="inp-g" id="fn-inp"></div>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:.5px solid var(--bd);display:flex;gap:8px;align-items:center">
+      <button class="btn-apply" onclick="applyManual()">✅ 反映</button>
+      <button class="btn" style="background:var(--s2);color:var(--t2);font-size:12px" onclick="resetData()">サンプルに戻す</button>
+      <span style="font-size:11px;color:var(--t3)">ブラウザに保存されます</span>
     </div>
   </div>
 </div>
 
-<!-- KPI SUMMARY -->
-<div class="sec">
-  <div class="sec-ttl">📊 年間KPIサマリー</div>
-  <div class="kpi-grid" id="kpi-grid"></div>
-</div>
+<!-- KPI -->
+<div class="sec"><div class="sec-ttl">📊 年間KPIサマリー</div><div class="kpi-grid" id="kpi-grid"></div></div>
 
 <!-- ALERTS -->
-<div class="sec">
-  <div class="sec-ttl">⚠️ アラート</div>
-  <div id="alerts"></div>
-</div>
+<div class="sec"><div class="sec-ttl">⚠️ アラート</div><div id="alerts"></div></div>
 
 <!-- FUNNEL -->
 <div class="sec">
@@ -291,22 +261,13 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
   <div class="card" style="overflow-x:auto"><table class="tbl" id="month-tbl"></table></div>
 </div>
 
-<!-- BRANCH KPI -->
-<div class="sec">
-  <div class="sec-ttl">🏢 拠点別KPI</div>
-  <div class="branch-kpi-grid" id="branch-kpi"></div>
-</div>
+<!-- BRANCH KPI CARDS -->
+<div class="sec"><div class="sec-ttl">🏢 拠点別KPI</div><div class="bk-grid" id="bk-grid"></div></div>
 
-<!-- BRANCH TABLE -->
-<div class="sec">
-  <div class="sec-ttl">🏢 拠点別詳細</div>
-  <div class="card" style="overflow-x:auto"><div id="branch-detail"></div></div>
-</div>
-
-<!-- MEDIA -->
-<div class="sec">
-  <div class="sec-ttl">📣 媒体別分析</div>
-  <div class="card" style="overflow-x:auto"><div id="media-panel"></div></div>
+<!-- BRANCH + MEDIA -->
+<div class="sec g2">
+  <div><div class="sec-ttl">🏢 拠点別詳細</div><div class="card" style="overflow-x:auto"><div id="branch-tbl"></div></div></div>
+  <div><div class="sec-ttl">📣 媒体別分析</div><div class="card" style="overflow-x:auto"><div id="media-tbl"></div></div></div>
 </div>
 
 <!-- CHARTS -->
@@ -321,7 +282,6 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
       <div class="cp" id="cp-4"><div class="leg"><span class="leg-i"><span class="leg-d" style="background:#2563eb"></span>応募数</span><span class="leg-i"><span class="leg-d" style="background:#16a34a"></span>採用数</span></div><div id="c4w" class="cw"><canvas id="c4"></canvas></div></div>
       <div class="cp" id="cp-5"><div class="leg"><span class="leg-i"><span class="leg-d" style="background:#bfdbfe"></span>目標</span><span class="leg-i"><span class="leg-d" style="background:#2563eb"></span>入社数</span></div><div id="c5w" class="cw"><canvas id="c5"></canvas></div></div>
       <div class="cp" id="cp-6"><div class="leg"><span class="leg-i"><span class="leg-d" style="background:#bfdbfe"></span>応募割合</span><span class="leg-i"><span class="leg-d" style="background:#2563eb"></span>採用割合</span></div><div class="cw" style="height:230px"><canvas id="c6"></canvas></div></div>
-      <div class="cp" id="cp-7"><div class="leg"><span class="leg-i"><span class="leg-d" style="background:#2563eb"></span>採用数</span></div><div id="c7w" class="cw"><canvas id="c7"></canvas></div></div>
     </div>
   </div>
 </div>
@@ -332,7 +292,7 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
   <div class="card">
     <div class="g2">
       <div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:10px">歩留まり率を変えて必要応募数・予算を試算</div>
+        <div style="font-size:11px;color:var(--t3);margin-bottom:10px">各フェーズの歩留まり率を調整して必要応募数・予算を試算</div>
         <div class="sl-row"><span class="sl-lbl">書類通過率</span><input type="range" id="s1" min="5" max="90" value="38"><span class="sl-val" id="v1">38%</span></div>
         <div class="sl-row"><span class="sl-lbl">面接設定率</span><input type="range" id="s2" min="10" max="95" value="71"><span class="sl-val" id="v2">71%</span></div>
         <div class="sl-row"><span class="sl-lbl">面接実施率</span><input type="range" id="s3" min="30" max="99" value="87"><span class="sl-val" id="v3">87%</span></div>
@@ -345,13 +305,13 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
       <div>
         <div style="font-size:11px;color:var(--t3);margin-bottom:10px">結果（目標 <span id="sim-t">94</span>名）</div>
         <div class="sim-g" id="sim-result"></div>
-        <div style="font-size:10px;color:var(--t3);margin-top:10px">※応募単価は設定値を使用</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:10px">※応募単価は昨年実績値を使用</div>
       </div>
     </div>
   </div>
 </div>
 
-<div style="text-align:center;padding:1.5rem 0;font-size:11px;color:var(--t3)">採用KPIダッシュボード — Googleスプレッドシートまたは手動入力で年間実績を管理</div>
+<div style="text-align:center;padding:1.5rem 0;font-size:11px;color:var(--t3)">採用KPIダッシュボード — Excelドロップで月次データを蓄積、年間KPIを自動集計</div>
 </div>
 
 <!-- REPORT MODAL -->
@@ -367,57 +327,37 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 </div>
 
 <script>
-// ═══════════════════════════════════
-// DEFAULT DATA
-// ═══════════════════════════════════
-const SAMPLE = {
-  target:94, startYM:'2026/04', appUnitLY:12773, hireUnitLY:199080,
-  months:[
-    {ym:'2026/04',target:8,actual:7,apps:103,cost:1310000},
-    {ym:'2026/05',target:8,actual:0,apps:0,cost:0},
-    {ym:'2026/06',target:8,actual:0,apps:0,cost:0},
-    {ym:'2026/07',target:8,actual:0,apps:0,cost:0},
-    {ym:'2026/08',target:7,actual:0,apps:0,cost:0},
-    {ym:'2026/09',target:8,actual:0,apps:0,cost:0},
-    {ym:'2026/10',target:8,actual:0,apps:0,cost:0},
-    {ym:'2026/11',target:8,actual:0,apps:0,cost:0},
-    {ym:'2026/12',target:7,actual:0,apps:0,cost:0},
-    {ym:'2027/01',target:8,actual:0,apps:0,cost:0},
-    {ym:'2027/02',target:7,actual:0,apps:0,cost:0},
-    {ym:'2027/03',target:8,actual:0,apps:0,cost:0},
-  ],
-  funnel:[
-    {name:'応募',    count:208,prev:180,target:240},
-    {name:'書類通過',count:78, prev:70, target:90},
-    {name:'面接設定',count:55, prev:52, target:64},
-    {name:'面接実施',count:48, prev:46, target:57},
-    {name:'一次通過',count:24, prev:20, target:28},
-    {name:'最終通過',count:16, prev:15, target:20},
-    {name:'内定',    count:14, prev:12, target:18},
-    {name:'承諾',    count:12, prev:11, target:16},
-    {name:'入社',    count:13, prev:11, target:16},
-  ],
-  branches:[
-    {name:'神奈川', target:50, hired:7, apps:103, cost:1310000},
-    {name:'東京',   target:30, hired:0, apps:52,  cost:150714},
-    {name:'愛知',   target:14, hired:0, apps:0,   cost:0},
-  ],
-  media:[
-    {name:'AirWORK/Indeed',apps:82, hired:6,cost:400000},
-    {name:'ジョブメドレー',  apps:55, hired:4,cost:910000},
-    {name:'介護ジョブ',      apps:22, hired:1,cost:0},
-    {name:'自社HP',          apps:10, hired:2,cost:0},
-    {name:'その他',          apps:9,  hired:1,cost:0},
-  ],
-  age:{20:{a:27,h:2},30:{a:35,h:4},40:{a:22,h:1},50:{a:12,h:1},60:{a:6,h:0}},
-  ssId1:'1PXJXKVZNwovcnlRtbbwF66rGElSkivnmu8hJOq1KTAo', gid1:'1324591651',
-  ssId2:'1KAU-dfHFKGfQgbn59xuCK8Exo2CujIYhM3rwgAZadyU', gid2:'1598129415',
-};
+// ═══════════════════════════
+// DATA MODEL
+// ═══════════════════════════
+const MEDIA_NAMES = ['AirWORK/Indeed','ジョブメドレー','介護ジョブ','マッハバイト','バイトルPRO','engage','HP','Yagioffer','その他','カイテク'];
+const MONTH_LABELS = ['4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月'];
+const MONTH_YMS    = ['2026/04','2026/05','2026/06','2026/07','2026/08','2026/09','2026/10','2026/11','2026/12','2027/01','2027/02','2027/03'];
 
-let D = deepCopy(SAMPLE);
+function makeDefaultData(){
+  return {
+    target:94, appUnitLY:12773, hireUnitLY:199080,
+    months: MONTH_YMS.map((ym,i)=>({ym,label:MONTH_LABELS[i],target:Math.round(94/12+(i<94%12?1:0)),actual:0,apps:0,cost:0,offers:0})),
+    branches:{},   // {name: {apps,hired,cost,target}}
+    media:{},      // {name: {apps,hired,cost}}
+    age:{20:{a:0,h:0},30:{a:0,h:0},40:{a:0,h:0},50:{a:0,h:0},60:{a:0,h:0}},
+    funnel:[
+      {name:'応募',    count:0,prev:0,target:0},
+      {name:'書類通過',count:0,prev:0,target:0},
+      {name:'面接設定',count:0,prev:0,target:0},
+      {name:'面接実施',count:0,prev:0,target:0},
+      {name:'一次通過',count:0,prev:0,target:0},
+      {name:'最終通過',count:0,prev:0,target:0},
+      {name:'内定',    count:0,prev:0,target:0},
+      {name:'承諾',    count:0,prev:0,target:0},
+      {name:'入社',    count:0,prev:0,target:0},
+    ],
+  };
+}
+
+let D = makeDefaultData();
 let charts = {};
 
-function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
 const G = id => document.getElementById(id);
 const fmt = n => Math.round(n).toLocaleString('ja-JP');
 const fmtY = n => '¥'+fmt(n);
@@ -425,538 +365,425 @@ const fmtYK = n => n>=10000000?'¥'+Math.round(n/1000000*10)/10+'M':(n>=100000?'
 const pct = (a,b) => b>0?Math.round(a/b*100):0;
 const sign = n => n>=0?'+':'';
 
-// ═══════════════════════════════════
+// ═══════════════════════════
 // PERSIST
-// ═══════════════════════════════════
-function save(){ try{localStorage.setItem('akarie_d2',JSON.stringify(D));}catch(e){} }
-function load(){
+// ═══════════════════════════
+function save(){ try{localStorage.setItem('akarie_v3',JSON.stringify(D));}catch(e){} }
+function loadSaved(){
   try{
-    const s=localStorage.getItem('akarie_d2');
+    const s=localStorage.getItem('akarie_v3');
     if(s){ D=JSON.parse(s); return true; }
   }catch(e){}
   return false;
 }
+function clearData(){ if(confirm('データをリセットしますか？')){D=makeDefaultData();save();G('status-bar').classList.remove('show');renderAll();} }
+function resetData(){ D=makeDefaultData();save();renderAll(); }
 
-// ═══════════════════════════════════
-// SHEET FETCH
-// ═══════════════════════════════════
-async function fetchSheets(){
-  const badge = G('ss-badge');
-  badge.textContent='取得中...'; badge.className='ss-badge';
-  try{
-    const url1=`https://docs.google.com/spreadsheets/d/${D.ssId1||SAMPLE.ssId1}/export?format=csv&gid=${D.gid1||SAMPLE.gid1}`;
-    const url2=`https://docs.google.com/spreadsheets/d/${D.ssId2||SAMPLE.ssId2}/export?format=csv&gid=${D.gid2||SAMPLE.gid2}`;
-    const [r1,r2] = await Promise.all([
-      fetch(url1).then(r=>{if(!r.ok)throw new Error('sheet1: '+r.status);return r.text();}),
-      fetch(url2).then(r=>{if(!r.ok)throw new Error('sheet2: '+r.status);return r.text();})
-    ]);
-    parseApplicants(r1);
-    parseReport(r2);
+// ═══════════════════════════
+// EXCEL PARSER
+// ═══════════════════════════
+function handleDrop(e){
+  e.preventDefault();
+  G('drop-zone').classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if(f) handleFile(f);
+}
+
+function handleFile(file){
+  if(!file) return;
+  addLog('📂 ファイル読み込み中: '+file.name, 'info');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
+      parseWorkbook(wb, file.name);
+    }catch(err){
+      addLog('❌ 読み込みエラー: '+err.message, 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseWorkbook(wb, filename){
+  const monthMap = {
+    '4月':'2026/04','5月':'2026/05','6月':'2026/06','7月':'2026/07',
+    '8月':'2026/08','9月':'2026/09','10月':'2026/10','11月':'2026/11',
+    '12月':'2026/12','1月':'2027/01','2月':'2027/02','3月':'2027/03',
+  };
+
+  let importedCount = 0;
+  for(const sheetName of wb.SheetNames){
+    const ym = monthMap[sheetName];
+    if(!ym) continue;
+
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+    if(rows.length < 51) continue;
+
+    const imported = parseMonthSheet(rows, ym, sheetName);
+    if(imported){
+      addLog(`✅ ${sheetName}（${ym}）を取り込みました`, 'ok');
+      importedCount++;
+    }
+  }
+
+  if(importedCount === 0){
+    addLog('⚠️ 月タブ（4月〜3月）が見つかりませんでした。シート名を確認してください。', 'err');
+  } else {
+    addLog(`🎉 ${importedCount}ヶ月分のデータを取り込みました`, 'ok');
     save();
-    badge.textContent='✓ '+new Date().toLocaleTimeString('ja-JP')+'更新'; badge.className='ss-badge ok';
+    G('status-bar').classList.add('show');
+    G('status-text').textContent = `${importedCount}ヶ月分のExcelデータ取込済（最終: ${new Date().toLocaleString('ja-JP')}）`;
+    G('drop-zone').classList.add('hidden');
     renderAll();
-  }catch(e){
-    badge.textContent='❌ '+e.message; badge.className='ss-badge err';
-    renderAll(); // fallback表示
   }
 }
 
-function parseCSV(t){
-  return t.split('\n').map(line=>{
-    const c=[]; let cur='',q=false;
-    for(let i=0;i<line.length;i++){
-      if(line[i]==='"'){q=!q;}
-      else if(line[i]===','&&!q){c.push(cur.trim());cur='';}
-      else{cur+=line[i];}
-    }
-    c.push(cur.trim()); return c;
-  });
-}
+function parseMonthSheet(rows, ym, sheetName){
+  try{
+    // 総計行 = row51 (index 50)
+    // ヘッダー行 = row47 (index 46): P=月,Q=支店,R=AirWORK,...,AB=応募数,AC=入社数,AD=採用数,AE=内定者数,AF=内定辞退,AG=金額,AH=応募単価,AI=採用単価
+    const r_total = rows[50];
+    if(!r_total) return false;
 
-function parseMoney(s){ return parseInt((s||'').replace(/[¥,￥\s]/g,''))||0; }
+    const totalApps  = toNum(r_total[27]);
+    const totalHired = toNum(r_total[28]);
+    const totalCost  = toNum(r_total[32]);
+    const appUnit    = Math.round(toFloat(r_total[33]));
+    const hireUnit   = Math.round(toFloat(r_total[34]));
+    const offers     = toNum(r_total[30]);
 
-function parseApplicants(csv){
-  const rows = parseCSV(csv);
-  // カラム: A=0,G=6=エリア,H=7=応募日,I=8=氏名,J=9=フリガナ,K=10=進捗,M=12=拠点,N=13=職種,O=14=媒体,P=15=年齢,Q=16=年月,R=17=年代,S=18=性別
-  // T=19=一次面接日,V=21=一次結果,X=23=二次結果,Z=25=内定日,AA=26=入社日,AD=30=退職日,AE=31=採用単価
-  const apps=[], byMedia={}, byBranch={}, byAge={};
-  for(let i=1;i<rows.length;i++){
-    const r=rows[i];
-    if(!r||r.length<10) continue;
-    const dateStr=r[7]||'';
-    if(!dateStr.match(/\d{4}/)) continue;
-    const ym = (r[16]||'').replace(/\//,'/').substring(0,7);
-    const media=(r[14]||'').trim()||'不明';
-    const branch=(r[12]||'').trim()||'不明';
-    const ag=parseInt(r[17])||0;
-    const status=(r[10]||'').trim();
-    const joinDate=(r[26]||'').trim();
-    const cost=parseMoney(r[31]||'');
-    const isHired = status==='入社'||joinDate.match(/\d{4}/);
+    if(totalApps === 0 && totalHired === 0 && totalCost === 0) return false;
 
-    apps.push({ym,media,branch,ag,status,isHired,cost});
-
-    if(!byMedia[media]) byMedia[media]={apps:0,hired:0,cost:0};
-    byMedia[media].apps++;
-    if(isHired){byMedia[media].hired++;byMedia[media].cost+=cost;}
-
-    if(branch&&branch!=='不明'){
-      if(!byBranch[branch]) byBranch[branch]={apps:0,hired:0,cost:0};
-      byBranch[branch].apps++;
-      if(isHired){byBranch[branch].hired++;byBranch[branch].cost+=cost;}
+    // 月データ更新
+    const mIdx = D.months.findIndex(m=>m.ym===ym);
+    if(mIdx >= 0){
+      D.months[mIdx].actual = totalHired;
+      D.months[mIdx].apps   = totalApps;
+      D.months[mIdx].cost   = totalCost;
+      D.months[mIdx].offers = offers;
     }
 
-    const agKey=Math.floor(ag/10)*10;
-    if(agKey>=10&&agKey<=90){
-      if(!byAge[agKey]) byAge[agKey]={a:0,h:0};
-      byAge[agKey].a++;
-      if(isHired) byAge[agKey].h++;
-    }
-  }
-
-  // 月別集計
-  const byYM={};
-  for(const a of apps){
-    if(!a.ym) continue;
-    if(!byYM[a.ym]) byYM[a.ym]={apps:0,hired:0,cost:0};
-    byYM[a.ym].apps++;
-    if(a.isHired){byYM[a.ym].hired++;byYM[a.ym].cost+=a.cost;}
-  }
-
-  // D.monthsに反映
-  D.months.forEach(m=>{
-    const s=byYM[m.ym];
-    if(s&&(s.apps>0||s.hired>0)){
-      m.apps=s.apps; m.hired=m.actual=s.hired; m.cost=s.cost;
-    }
-  });
-
-  // 媒体
-  D.media = Object.entries(byMedia)
-    .filter(([k,v])=>v.apps>0)
-    .sort((a,b)=>b[1].apps-a[1].apps)
-    .slice(0,8)
-    .map(([name,v])=>({name,...v}));
-
-  // 拠点
-  D.branches = Object.entries(byBranch)
-    .filter(([k,v])=>v.apps>0)
-    .sort((a,b)=>b[1].apps-a[1].apps)
-    .slice(0,10)
-    .map(([name,v])=>({name,apps:v.apps,hired:v.hired,cost:v.cost,target:0}));
-
-  // 年代
-  D.age={};
-  for(const [k,v] of Object.entries(byAge)) D.age[k]=v;
-
-  // ファネル（進捗ベース）
-  const total=apps.length;
-  const withInterview=apps.filter(a=>a.status&&!['応募','連絡不通','書類選考中','面接前辞退'].includes(a.status)).length;
-  const hired=apps.filter(a=>a.isHired).length;
-  D.funnel[0].count=total;
-  D.funnel[8].count=hired;
-}
-
-function parseReport(csv){
-  const rows=parseCSV(csv);
-  // 総計行探索: 列AA(26)=応募数, AB(27)=入社数, AC(28)=採用数, AD(29)=内定者数, AF(31)=金額, AG(32)=応募単価, AH(33)=採用単価
-  // 月別行（2026/04などが列P(15)に入る想定）
-  for(const r of rows){
-    const a0=(r[0]||'').trim();
-    const a4=(r[4]||'').trim();
-    // 月別行の識別: 0列か4列が "総計"
-    if(a0==='総計'||a4==='総計'){
-      // 全体集計
-      const totalApps=parseInt(r[27]||r[26])||0;
-      const totalHired=parseInt(r[28]||r[27])||0;
-      const totalCost=parseMoney(r[32]||r[31]||'');
-      const appUnit=parseMoney(r[33]||r[32]||'');
-      const hireUnit=parseMoney(r[34]||r[33]||'');
-      if(totalApps>0){
-        // 最新月に反映
-        const latestMonth=D.months.find(m=>m.ym===D.startYM)||D.months[0];
-        if(latestMonth){
-          latestMonth.apps=totalApps;
-          latestMonth.actual=latestMonth.hired=totalHired;
-          latestMonth.cost=totalCost;
-        }
-        D.appUnitLY=appUnit||D.appUnitLY;
+    // 媒体別費用（列R〜AA = index 17〜26）
+    MEDIA_NAMES.forEach((name,i)=>{
+      const cost = toNum(r_total[17+i]);
+      if(cost > 0){
+        if(!D.media[name]) D.media[name]={apps:0,hired:0,cost:0};
+        // 累計に加算（同月の場合は上書き）
+        D.media[name].cost = (D.media[name].cost||0) + cost;
       }
-      break;
-    }
-  }
+    });
 
-  // 媒体別費用（列Q=AirWORK, R=ジョブメドレー... 総計行から）
-  // 実績報告シートの行51: 総計 | AirWORK費用 | ジョブメドレー費用...
-  for(const r of rows){
-    const ym=(r[16]||'').trim();
-    if(ym==='総計'){
-      const mediaNames=['AirWORK/Indeed','ジョブメドレー','介護ジョブ','マッハバイト','バイトルPRO','engage','HP','Yagioffer','その他','カイテク'];
-      mediaNames.forEach((name,i)=>{
-        const cost=parseMoney(r[17+i]||'');
-        if(cost>0){
-          const m=D.media.find(m=>m.name===name);
-          if(m) m.cost=cost;
-          else D.media.push({name,apps:0,hired:0,cost});
-        }
-      });
-      break;
+    // 拠点別（行49=神奈川,行50=東京,行51=愛知の想定。P列が日付の行が拠点行）
+    for(let i=47; i<=52; i++){
+      const r = rows[i];
+      if(!r) continue;
+      const pVal = r[15]; // P列
+      const qVal = r[16]; // Q列 = 支店名
+      if(!qVal || typeof qVal !== 'string') continue;
+      if(qVal === '総計' || qVal === null) continue;
+      const apps   = toNum(r[27]);
+      const hired  = toNum(r[28]);
+      const cost   = toNum(r[32]);
+      if(apps > 0 || hired > 0){
+        if(!D.branches[qVal]) D.branches[qVal]={apps:0,hired:0,cost:0,target:0};
+        D.branches[qVal].apps  = (D.branches[qVal].apps||0) + apps;
+        D.branches[qVal].hired = (D.branches[qVal].hired||0) + hired;
+        D.branches[qVal].cost  = (D.branches[qVal].cost||0) + cost;
+      }
     }
+
+    // ファネルは入社数ベースで入社フェーズのみ更新
+    const joinIdx = D.funnel.findIndex(f=>f.name==='入社');
+    if(joinIdx >= 0){
+      D.funnel[joinIdx].count = D.months.reduce((s,m)=>s+m.actual,0);
+    }
+    const appIdx = D.funnel.findIndex(f=>f.name==='応募');
+    if(appIdx >= 0){
+      D.funnel[appIdx].count = D.months.reduce((s,m)=>s+m.apps,0);
+    }
+
+    return true;
+  }catch(e){
+    addLog(`❌ ${sheetName} パースエラー: `+e.message, 'err');
+    return false;
   }
 }
 
-// ═══════════════════════════════════
-// INPUT PANEL BUILD
-// ═══════════════════════════════════
+function toNum(v){ return parseInt((v||0).toString().replace(/[¥,￥\s]/g,''))||0; }
+function toFloat(v){ return parseFloat((v||0).toString().replace(/[¥,￥\s]/g,''))||0; }
+
+function addLog(msg, type='info'){
+  const el = G('import-log');
+  el.classList.add('show');
+  el.innerHTML += `<div class="log-${type}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ═══════════════════════════
+// MANUAL INPUT
+// ═══════════════════════════
+function toggleInput(){
+  const p=G('inp-panel');
+  if(!p.classList.contains('open')) buildInputPanel();
+  p.classList.toggle('open');
+}
+
 function buildInputPanel(){
   G('cfg-target').value=D.target;
-  G('cfg-start').value=D.startYM;
-  G('cfg-app-unit').value=D.appUnitLY;
-  G('cfg-hire-unit').value=D.hireUnitLY;
+  G('cfg-apu').value=D.appUnitLY;
+  G('cfg-hpu').value=D.hireUnitLY;
 
-  // 月別
-  const mg=G('month-inp-grid');
-  mg.innerHTML='';
+  const mg=G('m-grid'); mg.innerHTML='';
   D.months.forEach((m,i)=>{
-    const el=document.createElement('div');
-    el.className='mc';
-    el.innerHTML=`<div class="mc-lbl">${m.ym}</div>
+    const d=document.createElement('div'); d.className='mc';
+    d.innerHTML=`<div class="mc-lbl">${m.label}</div>
       <div class="mc-sub">目標</div><input type="number" id="mi_t${i}" value="${m.target}">
       <div class="mc-sub">入社数</div><input type="number" id="mi_a${i}" value="${m.actual}">
-      <div class="mc-sub">応募数</div><input type="number" id="mi_ap${i}" value="${m.apps}">
-      <div class="mc-sub">採用費(円)</div><input type="number" id="mi_c${i}" value="${m.cost}">`;
-    mg.appendChild(el);
+      <div class="mc-sub">応募数</div><input type="number" id="mi_p${i}" value="${m.apps}">
+      <div class="mc-sub">費用(円)</div><input type="number" id="mi_c${i}" value="${m.cost}">`;
+    mg.appendChild(d);
   });
 
-  // 拠点
-  const bi=G('branch-inp');
-  bi.innerHTML='<div style="display:grid;grid-template-columns:140px 70px 70px 70px 90px;gap:6px;margin-bottom:4px"><span style="font-size:10px;color:var(--t3)">拠点名</span><span style="font-size:10px;color:var(--t3);text-align:right">目標</span><span style="font-size:10px;color:var(--t3);text-align:right">入社数</span><span style="font-size:10px;color:var(--t3);text-align:right">応募数</span><span style="font-size:10px;color:var(--t3);text-align:right">採用費(円)</span></div>';
-  for(let i=0;i<10;i++){
-    const b=D.branches[i]||{name:'',target:0,hired:0,apps:0,cost:0};
-    bi.innerHTML+=`<div style="display:grid;grid-template-columns:140px 70px 70px 70px 90px;gap:6px;margin-bottom:6px">
-      <input type="text" id="br_n${i}" value="${b.name}" placeholder="拠点名" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);outline:none">
-      <input type="number" id="br_t${i}" value="${b.target||0}" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);text-align:right;outline:none">
-      <input type="number" id="br_h${i}" value="${b.hired||0}" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);text-align:right;outline:none">
-      <input type="number" id="br_a${i}" value="${b.apps||0}" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);text-align:right;outline:none">
-      <input type="number" id="br_c${i}" value="${b.cost||0}" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);text-align:right;outline:none">
-    </div>`;
-  }
-
-  // 媒体
-  const mi=G('media-inp');
-  mi.innerHTML='<div style="display:grid;grid-template-columns:140px 65px 65px 90px;gap:6px;margin-bottom:4px"><span style="font-size:10px;color:var(--t3)">媒体名</span><span style="font-size:10px;color:var(--t3);text-align:right">応募数</span><span style="font-size:10px;color:var(--t3);text-align:right">採用数</span><span style="font-size:10px;color:var(--t3);text-align:right">費用(円)</span></div>';
-  for(let i=0;i<8;i++){
-    const m=D.media[i]||{name:'',apps:0,hired:0,cost:0};
-    mi.innerHTML+=`<div style="display:grid;grid-template-columns:140px 65px 65px 90px;gap:6px;margin-bottom:6px">
-      <input type="text" id="md_n${i}" value="${m.name}" placeholder="媒体名" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);outline:none">
-      <input type="number" id="md_a${i}" value="${m.apps||0}" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);text-align:right;outline:none">
-      <input type="number" id="md_h${i}" value="${m.hired||0}" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);text-align:right;outline:none">
-      <input type="number" id="md_c${i}" value="${m.cost||0}" style="border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;font-size:11px;background:var(--s2);color:var(--text);text-align:right;outline:none">
-    </div>`;
-  }
-
-  // ファネル
-  const fi=G('funnel-inp');
-  fi.innerHTML='';
-  const fNames=['応募','書類通過','面接設定','面接実施','一次通過','最終通過','内定','承諾','入社'];
-  fNames.forEach((n,i)=>{
-    const f=D.funnel[i]||{count:0,prev:0,target:0};
-    fi.innerHTML+=`<div class="if"><label>${n}（件数）</label><input type="number" id="fn_c${i}" value="${f.count}">
-      <input type="number" id="fn_p${i}" value="${f.prev}" placeholder="前月同フェーズ" style="margin-top:3px;font-size:11px;border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;background:var(--s2);color:var(--text);width:100%;outline:none">
-      <input type="number" id="fn_t${i}" value="${f.target}" placeholder="目標値" style="margin-top:3px;font-size:11px;border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;background:var(--s2);color:var(--text);width:100%;outline:none">
+  const fi=G('fn-inp'); fi.innerHTML='';
+  D.funnel.forEach((f,i)=>{
+    fi.innerHTML+=`<div class="if"><label>${f.name}</label>
+      <input type="number" id="fn_c${i}" value="${f.count}" placeholder="件数">
+      <input type="number" id="fn_p${i}" value="${f.prev}" placeholder="前月" style="margin-top:3px;font-size:11px;border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;background:var(--s2);color:var(--tx);width:100%;outline:none">
+      <input type="number" id="fn_t${i}" value="${f.target}" placeholder="目標" style="margin-top:3px;font-size:11px;border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 7px;background:var(--s2);color:var(--tx);width:100%;outline:none">
     </div>`;
   });
-
-  // 年代
-  G('ag20a').value=(D.age[20]||{a:0}).a;G('ag20h').value=(D.age[20]||{h:0}).h;
-  G('ag30a').value=(D.age[30]||{a:0}).a;G('ag30h').value=(D.age[30]||{h:0}).h;
-  G('ag40a').value=(D.age[40]||{a:0}).a;G('ag40h').value=(D.age[40]||{h:0}).h;
-  G('ag50a').value=(D.age[50]||{a:0}).a;G('ag50h').value=(D.age[50]||{h:0}).h;
 }
 
-function applyInput(){
-  D.target=parseInt(G('cfg-target').value)||94;
-  D.startYM=G('cfg-start').value.trim();
-  D.appUnitLY=parseInt(G('cfg-app-unit').value)||12773;
-  D.hireUnitLY=parseInt(G('cfg-hire-unit').value)||199080;
-
+function applyManual(){
+  D.target   = parseInt(G('cfg-target').value)||94;
+  D.appUnitLY= parseInt(G('cfg-apu').value)||12773;
+  D.hireUnitLY=parseInt(G('cfg-hpu').value)||199080;
   D.months.forEach((m,i)=>{
     m.target=parseInt(G('mi_t'+i).value)||0;
     m.actual=parseInt(G('mi_a'+i).value)||0;
-    m.apps=parseInt(G('mi_ap'+i).value)||0;
-    m.cost=parseInt(G('mi_c'+i).value)||0;
+    m.apps  =parseInt(G('mi_p'+i).value)||0;
+    m.cost  =parseInt(G('mi_c'+i).value)||0;
   });
-
-  D.branches=[];
-  for(let i=0;i<10;i++){
-    const n=(G('br_n'+i).value||'').trim();
-    if(!n) continue;
-    D.branches.push({name:n,target:parseInt(G('br_t'+i).value)||0,hired:parseInt(G('br_h'+i).value)||0,apps:parseInt(G('br_a'+i).value)||0,cost:parseInt(G('br_c'+i).value)||0});
-  }
-
-  D.media=[];
-  for(let i=0;i<8;i++){
-    const n=(G('md_n'+i).value||'').trim();
-    if(!n) continue;
-    D.media.push({name:n,apps:parseInt(G('md_a'+i).value)||0,hired:parseInt(G('md_h'+i).value)||0,cost:parseInt(G('md_c'+i).value)||0});
-  }
-
   D.funnel.forEach((f,i)=>{
     f.count=parseInt(G('fn_c'+i).value)||0;
-    f.prev=parseInt(G('fn_p'+i).value)||0;
+    f.prev =parseInt(G('fn_p'+i).value)||0;
     f.target=parseInt(G('fn_t'+i).value)||0;
   });
-
-  D.age={
-    20:{a:parseInt(G('ag20a').value)||0,h:parseInt(G('ag20h').value)||0},
-    30:{a:parseInt(G('ag30a').value)||0,h:parseInt(G('ag30h').value)||0},
-    40:{a:parseInt(G('ag40a').value)||0,h:parseInt(G('ag40h').value)||0},
-    50:{a:parseInt(G('ag50a').value)||0,h:parseInt(G('ag50h').value)||0},
-  };
-
-  save();
-  G('inp-panel').classList.remove('open');
-  renderAll();
+  save(); G('inp-panel').classList.remove('open'); renderAll();
 }
 
-function resetToSample(){
-  D=deepCopy(SAMPLE);
-  save();
-  buildInputPanel();
-  renderAll();
-}
-
-// ═══════════════════════════════════
+// ═══════════════════════════
 // RENDER
-// ═══════════════════════════════════
+// ═══════════════════════════
 function renderAll(){
-  const doneM=D.months.filter(m=>m.actual>0||m.apps>0);
-  const nDone=doneM.length||1;
-  const totalHired=D.months.reduce((s,m)=>s+m.actual,0);
-  const totalApps=D.months.reduce((s,m)=>s+m.apps,0);
-  const totalCost=D.months.reduce((s,m)=>s+m.cost,0);
-  const avgHire=totalHired/nDone;
-  const avgApps=totalApps/nDone;
-  const fcastHire=Math.round(avgHire*12);
-  const fcastApps=Math.round(avgApps*12);
-  const unitCost=totalHired>0?Math.round(totalCost/totalHired):D.hireUnitLY;
-  const appUnit=totalApps>0?Math.round(totalCost/totalApps):D.appUnitLY;
-  const remain=D.target-totalHired;
-  const achRate=pct(totalHired,D.target);
-  const neededApps=totalHired>0?Math.round(remain*(totalApps/totalHired)):Math.round(remain*(1356/87));
-  const neededBudget=Math.round(neededApps*(appUnit||D.appUnitLY));
-  const mLeft=Math.max(12-nDone,0);
+  const doneM = D.months.filter(m=>m.actual>0||m.apps>0);
+  const nDone = doneM.length||1;
+  const totalHired= D.months.reduce((s,m)=>s+m.actual,0);
+  const totalApps = D.months.reduce((s,m)=>s+m.apps,0);
+  const totalCost = D.months.reduce((s,m)=>s+m.cost,0);
+  const avgHire   = totalHired/nDone;
+  const avgApps   = totalApps/nDone;
+  const fcastHire = Math.round(avgHire*12);
+  const fcastApps = Math.round(avgApps*12);
+  const unitCost  = totalHired>0?Math.round(totalCost/totalHired):D.hireUnitLY;
+  const appUnit   = totalApps>0?Math.round(totalCost/totalApps):D.appUnitLY;
+  const remain    = D.target-totalHired;
+  const achRate   = pct(totalHired,D.target);
+  const neededApps= totalHired>0?Math.round(remain*(totalApps/totalHired)):Math.round(remain*(1356/87));
+  const neededBgt = Math.round(neededApps*(appUnit||D.appUnitLY));
+  const mLeft     = Math.max(12-nDone,0);
 
   G('sim-t').textContent=D.target;
 
-  // ── KPI
+  // KPI
   const kpis=[
-    {l:'入社数（累計）',v:totalHired+'名', s:'目標 '+D.target+'名', c:achRate<40?'warn':'success'},
-    {l:'達成率',         v:achRate+'%',    s:'月平均 '+Math.round(avgHire*10)/10+'名/月', c:achRate<50?'warn':'success'},
-    {l:'累計採用コスト', v:fmtYK(totalCost),s:'今月 '+fmtYK(doneM[doneM.length-1]?.cost||0), c:''},
-    {l:'採用単価',       v:fmtY(unitCost), s:'昨年 '+fmtY(D.hireUnitLY), c:unitCost>200000?'danger':''},
-    {l:'累計応募数',     v:fmt(totalApps)+'名', s:'今月 '+fmt(doneM[doneM.length-1]?.apps||0)+'名', c:''},
-    {l:'応募単価',       v:fmtY(appUnit),  s:'昨年 '+fmtY(D.appUnitLY), c:''},
-    {l:'年間着地予測',   v:fcastHire+'名', s:'現ペース換算', c:fcastHire<D.target?'danger':'success'},
-    {l:'残必要応募数',   v:fmt(neededApps)+'名', s:'予算 '+fmtYK(neededBudget), c:'warn'},
+    {l:'入社数（累計）',  v:totalHired+'名',   s:'目標 '+D.target+'名',             c:achRate<40?'warn':'success'},
+    {l:'達成率',          v:achRate+'%',        s:'月平均 '+Math.round(avgHire*10)/10+'名/月', c:achRate<50?'warn':'success'},
+    {l:'累計採用コスト',  v:fmtYK(totalCost),  s:'今月 '+fmtYK(doneM.slice(-1)[0]?.cost||0), c:''},
+    {l:'採用単価',        v:fmtY(unitCost),     s:'昨年 '+fmtY(D.hireUnitLY),       c:unitCost>200000?'danger':''},
+    {l:'累計応募数',      v:fmt(totalApps)+'名',s:'今月 '+fmt(doneM.slice(-1)[0]?.apps||0)+'名', c:''},
+    {l:'応募単価',        v:fmtY(appUnit),      s:'昨年 '+fmtY(D.appUnitLY),        c:''},
+    {l:'年間着地予測',    v:fcastHire+'名',     s:'現ペース換算',                    c:fcastHire<D.target?'danger':'success'},
+    {l:'残必要応募数',    v:fmt(neededApps)+'名',s:'予算 '+fmtYK(neededBgt),        c:'warn'},
   ];
   G('kpi-grid').innerHTML=kpis.map(k=>`<div class="kpi ${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
-  // ── ALERTS
+  // ALERTS
   const als=[];
-  const appRatio=pct(totalApps,Math.round(1356/12*nDone));
-  if(appRatio<80) als.push({c:'danger',m:`応募数が目標比 ${appRatio}%（80%未満）— 媒体強化・予算追加を検討`});
+  const ar=pct(totalApps,Math.round(1356/12*nDone));
+  if(ar<80) als.push({c:'danger',m:`応募数が目標比 ${ar}%（80%未満）— 媒体強化・予算追加を検討`});
   if(unitCost>200000) als.push({c:'danger',m:`採用単価 ${fmtY(unitCost)} が20万円超 — コスト効率の見直しが必要`});
   const f=D.funnel;
-  const acceptR=pct(f[7]?.count,f[6]?.count);
-  if(acceptR<60&&f[6]?.count>0) als.push({c:'danger',m:`内定承諾率 ${acceptR}%（60%未満）— オファー条件強化が必要`});
+  const acR=pct(f[7]?.count,f[6]?.count);
+  if(acR<60&&f[6]?.count>0) als.push({c:'danger',m:`内定承諾率 ${acR}%（60%未満）`});
   if(fcastHire<D.target) als.push({c:'danger',m:`着地予測 ${fcastHire}名 — 目標${D.target}名に ${D.target-fcastHire}名不足の見込み`});
-  if(als.length===0) als.push({c:'success',m:'現時点でのアラートはありません。引き続き進捗を管理してください。'});
-  G('alerts').innerHTML=als.map(a=>`<div class="alert ${a.c}"><span>${a.c==='danger'?'⚠️':a.c==='warn'?'🔶':'✅'}</span><span>${a.m}</span></div>`).join('');
+  if(als.length===0) als.push({c:'success',m:'現時点でのアラートはありません'});
+  G('alerts').innerHTML=als.map(a=>`<div class="alert ${a.c}"><span>${a.c==='danger'?'⚠️':'✅'}</span><span>${a.m}</span></div>`).join('');
 
-  // ── FUNNEL
+  // FUNNEL
   const maxC=f[0]?.count||1;
   G('fn-body').innerHTML=f.map((fi,i)=>{
-    const rate=i===0?100:pct(fi.count,f[i-1].count);
-    const mom=fi.prev>0?pct(fi.count-fi.prev,fi.prev):0;
-    const tr=pct(fi.count,fi.target);
+    const r=i===0?100:pct(fi.count,f[i-1].count);
+    const m=fi.prev>0?pct(fi.count-fi.prev,fi.prev):0;
+    const t=pct(fi.count,fi.target);
     const bp=pct(fi.count,maxC);
-    const bc=tr<80?'#dc2626':tr>=100?'#16a34a':'#2563eb';
-    return `<div class="fn-row"><span style="font-weight:700;font-size:11px">${fi.name}</span><div><div class="bw"><div class="bf" style="width:${bp}%;background:${bc}"></div></div></div><span class="cr">${fmt(fi.count)}</span><span class="cr">${rate}%</span><span class="cr ${mom>=0?'pos':'neg'}">${sign(mom)}${mom}%</span><span class="cr ${tr<80?'neg':tr>=100?'pos':'wrn'}">${tr}%</span></div>`;
+    const bc=t<80&&fi.target>0?'#dc2626':t>=100?'#16a34a':'#2563eb';
+    return `<div class="fn-row"><span style="font-weight:700;font-size:11px">${fi.name}</span><div><div class="bw"><div class="bf" style="width:${bp}%;background:${bc}"></div></div></div><span class="cr">${fmt(fi.count)}</span><span class="cr">${r}%</span><span class="cr ${m>=0?'pos':'neg'}">${sign(m)}${m}%</span><span class="cr ${t<80&&fi.target>0?'neg':t>=100?'pos':'wrn'}">${fi.target>0?t+'%':'—'}</span></div>`;
   }).join('');
 
-  // ── FORECAST
+  // FORECAST
   G('fc-card').innerHTML=`
     <div class="ir"><span class="ir-k">年間着地予測</span><span class="ir-v ${fcastHire<D.target?'neg':'pos'}">${fcastHire}名</span></div>
     <div class="ir"><span class="ir-k">月平均ペース</span><span class="ir-v">${Math.round(avgHire*10)/10}名/月</span></div>
     <div class="ir"><span class="ir-k">応募数着地予測</span><span class="ir-v">${fmt(fcastApps)}名</span></div>
     <div class="ir"><span class="ir-k">採用単価着地予測</span><span class="ir-v ${unitCost>200000?'neg':''}">${fmtY(unitCost)}</span></div>
-    <div class="ir"><span class="ir-k">目標達成に必要な月平均</span><span class="ir-v">${mLeft>0?Math.round(remain/mLeft*10)/10:'-'}名/月</span></div>
+    <div class="ir"><span class="ir-k">目標達成に月平均</span><span class="ir-v">${mLeft>0?Math.round(remain/mLeft*10)/10:'-'}名/月 必要</span></div>
     <div class="prog-w"><div class="prog-f" style="width:${Math.min(achRate,100)}%;background:${achRate<50?'#dc2626':'#16a34a'}"></div></div>
     <div style="font-size:11px;color:var(--t3);margin-top:5px">進捗率 ${achRate}%（${totalHired}名 / ${D.target}名）</div>`;
 
   G('res-card').innerHTML=`
     <div class="ir"><span class="ir-k">残り採用目標</span><span class="ir-v">${remain}名</span></div>
     <div class="ir"><span class="ir-k">必要応募数（残）</span><span class="ir-v neg">${fmt(neededApps)}名</span></div>
-    <div class="ir"><span class="ir-k">必要予算（残）</span><span class="ir-v neg">${fmtYK(neededBudget)}</span></div>
+    <div class="ir"><span class="ir-k">必要予算（残）</span><span class="ir-v neg">${fmtYK(neededBgt)}</span></div>
     <div class="ir"><span class="ir-k">残月数</span><span class="ir-v">${mLeft}ヶ月</span></div>
     <div class="ir"><span class="ir-k">月間必要応募数</span><span class="ir-v">${mLeft>0?Math.round(neededApps/mLeft):'-'}名/月</span></div>
-    <div class="ir"><span class="ir-k">月間必要予算</span><span class="ir-v">${mLeft>0?fmtYK(neededBudget/mLeft):'-'}/月</span></div>`;
+    <div class="ir"><span class="ir-k">月間必要予算</span><span class="ir-v">${mLeft>0?fmtYK(neededBgt/mLeft):'-'}/月</span></div>`;
 
-  // ── MONTH TABLE
+  // MONTH TABLE
   let cumT=0,cumA=0;
-  let rows='<tr><th>月</th><th style="text-align:right">目標</th><th style="text-align:right">実績</th><th style="text-align:right">差分</th><th style="text-align:right">累計目標</th><th style="text-align:right">累計実績</th><th style="text-align:right">応募数</th><th style="text-align:right">採用コスト</th><th style="text-align:right">採用単価</th><th style="text-align:right">着地予測</th></tr>';
+  let rows='<tr><th>月</th><th style="text-align:right">目標</th><th style="text-align:right">実績</th><th style="text-align:right">差分</th><th style="text-align:right">累計目標</th><th style="text-align:right">累計実績</th><th style="text-align:right">応募数</th><th style="text-align:right">採用コスト</th><th style="text-align:right">採用単価</th></tr>';
   D.months.forEach((m,i)=>{
     cumT+=m.target; cumA+=m.actual;
     const diff=m.actual-m.target;
     const hu=m.actual>0?Math.round(m.cost/m.actual):0;
     const isLast=i===11;
-    const isCurrent=m.actual>0&&(i===D.months.length-1||!D.months[i+1]?.actual);
-    rows+=`<tr${isLast?' class="total"':isCurrent?' class="current"':''}><td>${m.ym}</td><td>${m.target}</td><td>${m.actual||'-'}</td><td class="${diff<0?'neg':diff>0?'pos':''}">${m.actual?(sign(diff)+diff):'-'}</td><td>${cumT}</td><td>${cumA||'-'}</td><td>${m.apps||'-'}</td><td>${m.cost?fmtYK(m.cost):'-'}</td><td>${hu?fmtY(hu):'-'}</td><td>${m.actual?fcastHire:'-'}</td></tr>`;
+    const isCur=m.actual>0&&(i===D.months.length-1||!D.months[i+1]?.actual);
+    rows+=`<tr${isLast?' class="total"':isCur?' class="hi"':''}><td>${m.label}</td><td>${m.target}</td><td>${m.actual||'-'}</td><td class="${diff<0?'neg':diff>0?'pos':''}">${m.actual?(sign(diff)+diff):'-'}</td><td>${cumT}</td><td>${cumA||'-'}</td><td>${m.apps||'-'}</td><td>${m.cost?fmtYK(m.cost):'-'}</td><td>${hu?fmtY(hu):'-'}</td></tr>`;
   });
-  const totalRow=`<tr class="total"><td>合計</td><td>${D.months.reduce((s,m)=>s+m.target,0)}</td><td>${totalHired||'-'}</td><td class="${totalHired-D.target<0?'neg':'pos'}">${sign(totalHired-D.target)}${totalHired-D.target}</td><td>—</td><td>—</td><td>${totalApps||'-'}</td><td>${totalCost?fmtYK(totalCost):'-'}</td><td>${unitCost?fmtY(unitCost):'-'}</td><td>—</td></tr>`;
-  G('month-tbl').innerHTML=rows+totalRow;
+  rows+=`<tr class="total"><td>合計</td><td>${D.months.reduce((s,m)=>s+m.target,0)}</td><td>${totalHired||'-'}</td><td class="${totalHired-D.target<0?'neg':'pos'}">${sign(totalHired-D.target)}${totalHired-D.target}</td><td>—</td><td>—</td><td>${totalApps||'-'}</td><td>${fmtYK(totalCost)}</td><td>${fmtY(unitCost)}</td></tr>`;
+  G('month-tbl').innerHTML=rows;
 
-  // ── BRANCH KPI CARDS
-  const br=D.branches.filter(b=>b.name);
-  G('branch-kpi').innerHTML=br.map(b=>{
-    const r=pct(b.hired,b.target);
+  // BRANCH KPI CARDS
+  const brs=Object.entries(D.branches).filter(([k,v])=>v.apps>0||v.hired>0).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0));
+  G('bk-grid').innerHTML = brs.length ? brs.map(([name,b])=>{
+    const r=pct(b.hired,b.target||1);
     const hu=b.hired>0?Math.round(b.cost/b.hired):0;
-    const barColor=r>=90?'#16a34a':r>=60?'#d97706':'#dc2626';
-    return `<div class="branch-kpi">
-      <div class="bk-name">🏢 ${b.name}</div>
-      <div class="bk-row"><span class="bk-k">入社数</span><span class="bk-v ${r<60?'neg':r>=90?'pos':'wrn'}">${b.hired}名 / 目標${b.target}名</span></div>
-      <div class="bk-row"><span class="bk-k">応募数</span><span class="bk-v">${b.apps||0}名</span></div>
+    const bc=b.hired>=(b.target||1)?'#16a34a':b.hired>0?'#d97706':'#dc2626';
+    return `<div class="bk"><div class="bk-name">🏢 ${name}</div>
+      <div class="bk-row"><span class="bk-k">応募数</span><span class="bk-v">${fmt(b.apps)}名</span></div>
+      <div class="bk-row"><span class="bk-k">入社数</span><span class="bk-v ${b.hired>0?'pos':''}">${b.hired}名</span></div>
       <div class="bk-row"><span class="bk-k">採用コスト</span><span class="bk-v">${b.cost?fmtYK(b.cost):'-'}</span></div>
       <div class="bk-row"><span class="bk-k">採用単価</span><span class="bk-v ${hu>200000?'neg':''}">${hu?fmtY(hu):'-'}</span></div>
-      <div class="bk-prog"><div class="bk-prog-f" style="width:${Math.min(r,100)}%;background:${barColor}"></div></div>
-      <div style="font-size:10px;color:var(--t3);margin-top:3px">充足率 ${r}%</div>
+      <div class="bk-bar"><div class="bk-bar-f" style="width:${Math.min(pct(b.hired,b.apps||1),100)}%;background:${bc}"></div></div>
+      <div style="font-size:10px;color:var(--t3);margin-top:3px">応募→採用率 ${pct(b.hired,b.apps||1)}%</div>
     </div>`;
-  }).join('')||'<div style="color:var(--t3);font-size:13px">拠点データがありません。手動入力から追加してください。</div>';
+  }).join('') : '<div style="color:var(--t3);font-size:13px">Excelを取り込むと拠点別データが表示されます</div>';
 
-  // ── BRANCH DETAIL TABLE
-  G('branch-detail').innerHTML=`<table class="tbl">
-    <tr><th style="text-align:left">拠点</th><th>目標</th><th>応募数</th><th>入社数</th><th>充足率</th><th>採用コスト</th><th>採用単価</th><th>応募→採用率</th></tr>
-    ${br.map(b=>{
-      const r=pct(b.hired,b.target);
-      const hu=b.hired>0?Math.round(b.cost/b.hired):0;
-      const convR=pct(b.hired,b.apps);
-      return `<tr><td>${b.name}</td><td style="text-align:right">${b.target}</td><td style="text-align:right">${b.apps||0}</td><td style="text-align:right">${b.hired}</td><td style="text-align:right"><span class="badge ${r>=90?'bg-g':r>=60?'bg-a':'bg-r'}">${r}%</span></td><td style="text-align:right">${b.cost?fmtYK(b.cost):'-'}</td><td style="text-align:right ${hu>200000?' neg':''}">${hu?fmtY(hu):'-'}</td><td style="text-align:right">${convR?convR+'%':'-'}</td></tr>`;
-    }).join('')}
-    <tr class="total"><td>合計</td><td style="text-align:right">${br.reduce((s,b)=>s+b.target,0)}</td><td style="text-align:right">${br.reduce((s,b)=>s+(b.apps||0),0)}</td><td style="text-align:right">${br.reduce((s,b)=>s+b.hired,0)}</td><td style="text-align:right">—</td><td style="text-align:right">${fmtYK(br.reduce((s,b)=>s+b.cost,0))}</td><td style="text-align:right">${fmtY(unitCost)}</td><td style="text-align:right">—</td></tr>
+  // BRANCH TABLE
+  G('branch-tbl').innerHTML=`<table class="tbl">
+    <tr><th style="text-align:left">拠点</th><th>応募数</th><th>入社数</th><th>採用コスト</th><th>採用単価</th><th>採用率</th></tr>
+    ${brs.map(([name,b])=>{const hu=b.hired>0?Math.round(b.cost/b.hired):0;return`<tr><td>${name}</td><td style="text-align:right">${fmt(b.apps)}</td><td style="text-align:right">${b.hired}</td><td style="text-align:right">${b.cost?fmtYK(b.cost):'-'}</td><td style="text-align:right" class="${hu>200000?'neg':''}">${hu?fmtY(hu):'-'}</td><td style="text-align:right">${pct(b.hired,b.apps||1)}%</td></tr>`;}).join('')}
+    ${brs.length>1?`<tr class="total"><td>合計</td><td style="text-align:right">${fmt(brs.reduce((s,[,b])=>s+(b.apps||0),0))}</td><td style="text-align:right">${brs.reduce((s,[,b])=>s+b.hired,0)}</td><td style="text-align:right">${fmtYK(brs.reduce((s,[,b])=>s+(b.cost||0),0))}</td><td style="text-align:right">${fmtY(unitCost)}</td><td style="text-align:right">—</td></tr>`:''}
   </table>`;
 
-  // ── MEDIA
-  const md=D.media.filter(m=>m.name&&m.apps>0);
-  G('media-panel').innerHTML=`<table class="tbl">
-    <tr><th style="text-align:left">媒体</th><th>応募数</th><th>採用数</th><th>応募→採用率</th><th>採用コスト</th><th>採用単価</th></tr>
-    ${md.map(m=>{
-      const hu=m.hired>0?Math.round(m.cost/m.hired):0;
-      const convR=pct(m.hired,m.apps);
-      return `<tr><td>${m.name}</td><td style="text-align:right">${m.apps}</td><td style="text-align:right">${m.hired}</td><td style="text-align:right">${convR}%</td><td style="text-align:right">${m.cost?fmtYK(m.cost):'-'}</td><td style="text-align:right" class="${hu>300000?'neg':hu>0&&hu<100000?'pos':''}">${hu?fmtY(hu):'-'}</td></tr>`;
-    }).join('')}
+  // MEDIA TABLE
+  const mds=Object.entries(D.media).filter(([k,v])=>v.cost>0||v.apps>0).sort((a,b)=>(b[1].cost||0)-(a[1].cost||0));
+  G('media-tbl').innerHTML=`<table class="tbl">
+    <tr><th style="text-align:left">媒体</th><th>応募数</th><th>採用数</th><th>採用コスト</th><th>採用単価</th></tr>
+    ${mds.map(([name,m])=>{const hu=m.hired>0?Math.round(m.cost/m.hired):0;return`<tr><td>${name}</td><td style="text-align:right">${m.apps||'-'}</td><td style="text-align:right">${m.hired||'-'}</td><td style="text-align:right">${m.cost?fmtYK(m.cost):'-'}</td><td style="text-align:right" class="${hu>300000?'neg':hu>0&&hu<100000?'pos':''}">${hu?fmtY(hu):'-'}</td></tr>`;}).join('')}
   </table>`;
 
-  // ── CHARTS
-  renderCharts(doneM, nDone, avgApps, fcastHire, unitCost);
+  // CHARTS
+  renderCharts(doneM, nDone, avgApps, brs, mds);
   calcSim();
 }
 
-function renderCharts(doneM, nDone, avgApps, fcastHire, unitCost){
+function renderCharts(doneM, nDone, avgApps, brs, mds){
   const destroy=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
   const co=()=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}});
-
-  const labels=D.months.map(m=>m.ym);
-  const appData=D.months.map(m=>m.apps||null);
-  const hireData=D.months.map(m=>m.actual||null);
-  const fcastData=D.months.map((m,i)=>i>=nDone?Math.round(avgApps):null);
+  const labels=D.months.map(m=>m.label);
 
   destroy('c1');
   charts['c1']=new Chart(G('c1'),{type:'bar',data:{labels,datasets:[
-    {label:'実績',data:appData,backgroundColor:'#2563eb'},
-    {label:'予測',data:fcastData,backgroundColor:'#bfdbfe'},
+    {label:'実績',data:D.months.map(m=>m.apps||null),backgroundColor:'#2563eb'},
+    {label:'予測',data:D.months.map((m,i)=>i>=nDone?Math.round(avgApps):null),backgroundColor:'#bfdbfe'},
     {label:'昨年平均',data:labels.map(()=>Math.round(1356/12)),type:'line',borderColor:'#dc2626',borderDash:[4,4],pointRadius:0,borderWidth:1.5},
   ]},options:{...co(),scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{font:{size:10}}}}}});
 
   destroy('c2');
   charts['c2']=new Chart(G('c2'),{type:'bar',data:{labels,datasets:[
-    {label:'実績',data:hireData,backgroundColor:'#16a34a'},
+    {label:'実績',data:D.months.map(m=>m.actual||null),backgroundColor:'#16a34a'},
     {label:'目標',data:D.months.map(m=>m.target),type:'line',borderColor:'#dc2626',borderDash:[4,4],pointRadius:0,borderWidth:1.5},
   ]},options:{...co(),scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{font:{size:10}}}}}});
 
   const c3m=D.months.filter(m=>m.actual>0&&m.cost>0);
   destroy('c3');
-  charts['c3']=new Chart(G('c3'),{type:'line',data:{labels:c3m.map(m=>m.ym),datasets:[
+  charts['c3']=new Chart(G('c3'),{type:'line',data:{labels:c3m.map(m=>m.label),datasets:[
     {label:'採用単価',data:c3m.map(m=>Math.round(m.cost/m.actual)),borderColor:'#1e3a5f',tension:.3,pointRadius:4,pointBackgroundColor:'#1e3a5f'},
     {label:'昨年実績',data:c3m.map(()=>D.hireUnitLY),borderColor:'#9ca3af',borderDash:[4,4],pointRadius:0,borderWidth:1.5},
   ]},options:{...co()}});
 
-  const md=D.media.filter(m=>m.name&&m.apps>0);
-  const c4h=Math.max(md.length*38+60,160);
+  const c4h=Math.max(mds.length*38+60,160);
   G('c4w').style.height=c4h+'px';
   destroy('c4');
-  charts['c4']=new Chart(G('c4'),{type:'bar',data:{labels:md.map(m=>m.name),datasets:[
-    {label:'応募数',data:md.map(m=>m.apps),backgroundColor:'#2563eb'},
-    {label:'採用数',data:md.map(m=>m.hired),backgroundColor:'#16a34a'},
-  ]},options:{...co(),indexAxis:'y',scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}});
+  charts['c4']=new Chart(G('c4'),{type:'bar',data:{labels:mds.map(([n])=>n),datasets:[
+    {label:'費用',data:mds.map(([,m])=>m.cost||0),backgroundColor:'#2563eb'},
+  ]},options:{...co(),indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10},callback:v=>fmtYK(v)}},y:{ticks:{font:{size:10}}}}}});
 
-  const br=D.branches.filter(b=>b.name);
-  const c5h=Math.max(br.length*38+60,140);
+  const c5h=Math.max(brs.length*38+60,140);
   G('c5w').style.height=c5h+'px';
   destroy('c5');
-  charts['c5']=new Chart(G('c5'),{type:'bar',data:{labels:br.map(b=>b.name),datasets:[
-    {label:'目標',data:br.map(b=>b.target),backgroundColor:'#bfdbfe'},
-    {label:'入社数',data:br.map(b=>b.hired),backgroundColor:'#2563eb'},
+  charts['c5']=new Chart(G('c5'),{type:'bar',data:{labels:brs.map(([n])=>n),datasets:[
+    {label:'応募数',data:brs.map(([,b])=>b.apps||0),backgroundColor:'#bfdbfe'},
+    {label:'入社数',data:brs.map(([,b])=>b.hired||0),backgroundColor:'#2563eb'},
   ]},options:{...co(),indexAxis:'y',scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}});
 
   const ag=D.age;
-  const agK=[20,30,40,50,60];
-  const agL=['20代','30代','40代','50代','60代'];
-  const totA=agK.reduce((s,k)=>s+(ag[k]?.a||0),0)||1;
-  const totH=agK.reduce((s,k)=>s+(ag[k]?.h||0),0)||1;
+  const agK=[20,30,40,50,60]; const agL=['20代','30代','40代','50代','60代'];
+  const tA=agK.reduce((s,k)=>s+(ag[k]?.a||0),0)||1;
+  const tH=agK.reduce((s,k)=>s+(ag[k]?.h||0),0)||1;
   destroy('c6');
   charts['c6']=new Chart(G('c6'),{type:'bar',data:{labels:agL,datasets:[
-    {label:'応募割合',data:agK.map(k=>Math.round((ag[k]?.a||0)/totA*100)),backgroundColor:'#bfdbfe'},
-    {label:'採用割合',data:agK.map(k=>Math.round((ag[k]?.h||0)/totH*100)),backgroundColor:'#2563eb'},
+    {label:'応募割合',data:agK.map(k=>Math.round((ag[k]?.a||0)/tA*100)),backgroundColor:'#bfdbfe'},
+    {label:'採用割合',data:agK.map(k=>Math.round((ag[k]?.h||0)/tH*100)),backgroundColor:'#2563eb'},
   ]},options:{...co(),scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,max:70,ticks:{font:{size:10},callback:v=>v+'%'}}}}});
-
-  // 拠点別採用数棒グラフ
-  const c7h=Math.max(br.length*38+60,140);
-  G('c7w').style.height=c7h+'px';
-  destroy('c7');
-  charts['c7']=new Chart(G('c7'),{type:'bar',data:{labels:br.map(b=>b.name),datasets:[
-    {label:'採用数',data:br.map(b=>b.hired),backgroundColor:br.map(b=>pct(b.hired,b.target)>=90?'#16a34a':pct(b.hired,b.target)>=60?'#d97706':'#dc2626')},
-  ]},options:{...co(),indexAxis:'y',scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}});
 }
 
-// ═══════════════════════════════════
+// ═══════════════════════════
 // SIMULATION
-// ═══════════════════════════════════
+// ═══════════════════════════
 function calcSim(){
   const vals=[1,2,3,4,5,6,7,8].map(i=>parseInt(G('s'+i).value)/100);
   const conv=vals.reduce((p,v)=>p*v,1);
   const needed=conv>0?Math.ceil(D.target/conv):99999;
   const budget=Math.round(needed*D.appUnitLY);
   const f=D.funnel;
-  const curConv=(f[8]?.count||1)/(f[0]?.count||1);
-  const impr=curConv>0?Math.round((conv/curConv-1)*100):0;
+  const cur=(f[8]?.count||1)/(f[0]?.count||1);
+  const imp=cur>0?Math.round((conv/cur-1)*100):0;
   G('sim-result').innerHTML=`
     <div class="sim-card"><div class="sim-lbl">総合歩留まり率</div><div class="sim-val" style="color:var(--blue)">${(conv*100).toFixed(2)}%</div></div>
     <div class="sim-card"><div class="sim-lbl">必要応募数</div><div class="sim-val neg">${fmt(needed)}名</div></div>
     <div class="sim-card"><div class="sim-lbl">必要予算</div><div class="sim-val neg">${fmtYK(budget)}</div></div>
-    <div class="sim-card"><div class="sim-lbl">現状比（改善効果）</div><div class="sim-val ${impr>=0?'pos':'neg'}">${impr>=0?'+':''}${impr}%</div></div>`;
+    <div class="sim-card"><div class="sim-lbl">現状比（改善効果）</div><div class="sim-val ${imp>=0?'pos':'neg'}">${imp>=0?'+':''}${imp}%</div></div>`;
 }
 [1,2,3,4,5,6,7,8].forEach(i=>{
   G('s'+i).addEventListener('input',function(){G('v'+i).textContent=Math.min(100,parseInt(this.value))+'%';calcSim();});
 });
 
-// ═══════════════════════════════════
-// REPORT
-// ═══════════════════════════════════
-function openReport(){buildReport();G('rpt-modal').classList.add('open');}
-function closeReport(){G('rpt-modal').classList.remove('open');}
+// ═══════════════════════════
+// CHART TABS
+// ═══════════════════════════
+[{i:'1',l:'応募推移'},{i:'2',l:'採用推移'},{i:'3',l:'採用単価推移'},{i:'4',l:'媒体別費用'},{i:'5',l:'拠点別'},{i:'6',l:'年代別'}].forEach(t=>{
+  const b=document.createElement('button'); b.className='tab'+(t.i==='1'?' active':''); b.textContent=t.l;
+  b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.cp').forEach(x=>x.classList.remove('active'));b.classList.add('active');G('cp-'+t.i).classList.add('active');};
+  G('chart-tabs').appendChild(b);
+});
 
-function buildReport(){
+// ═══════════════════════════
+// REPORT
+// ═══════════════════════════
+function openReport(){
   const totalHired=D.months.reduce((s,m)=>s+m.actual,0);
   const totalApps=D.months.reduce((s,m)=>s+m.apps,0);
   const totalCost=D.months.reduce((s,m)=>s+m.cost,0);
@@ -965,16 +792,15 @@ function buildReport(){
   const achRate=pct(totalHired,D.target);
   const fcast=Math.round(totalHired/nDone*12);
   const today=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
-  const br=D.branches.filter(b=>b.name);
-  const md=D.media.filter(m=>m.name&&m.apps>0);
-  const f=D.funnel;
+  const brs=Object.entries(D.branches).filter(([,v])=>v.apps>0||v.hired>0).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0));
+  const mds=Object.entries(D.media).filter(([,v])=>v.cost>0).sort((a,b)=>(b[1].cost||0)-(a[1].cost||0));
 
   G('rpt-content').innerHTML=`
 <h1>採用活動 年間実績レポート</h1>
-<p style="color:var(--t3);font-size:11px">作成日: ${today} ／ 対象: ${D.startYM}〜 ／ 自動生成</p>
+<p style="color:var(--t3);font-size:11px">作成日: ${today} ／ 自動生成</p>
 <h2>📊 年間KPIサマリー</h2>
 <div class="rpt-kpi">
-  <div class="rk"><div class="rk-l">入社数（累計）</div><div class="rk-v">${totalHired}名 / ${D.target}名</div></div>
+  <div class="rk"><div class="rk-l">入社数</div><div class="rk-v">${totalHired}名 / ${D.target}名</div></div>
   <div class="rk"><div class="rk-l">達成率</div><div class="rk-v">${achRate}%</div></div>
   <div class="rk"><div class="rk-l">年間着地予測</div><div class="rk-v">${fcast}名</div></div>
   <div class="rk"><div class="rk-l">累計採用コスト</div><div class="rk-v">${fmtYK(totalCost)}</div></div>
@@ -984,67 +810,32 @@ function buildReport(){
 <h2>📅 月別実績</h2>
 <table class="rpt-tbl">
   <tr><th style="text-align:left">月</th><th>目標</th><th>実績</th><th>差分</th><th>応募数</th><th>採用コスト</th><th>採用単価</th></tr>
-  ${D.months.map(m=>{const diff=m.actual-m.target;const hu=m.actual>0?Math.round(m.cost/m.actual):0;return`<tr><td>${m.ym}</td><td>${m.target}</td><td>${m.actual||'-'}</td><td class="${diff<0?'neg':''}">${m.actual?(sign(diff)+diff):'-'}</td><td>${m.apps||'-'}</td><td>${m.cost?fmtYK(m.cost):'-'}</td><td>${hu?fmtY(hu):'-'}</td></tr>`;}).join('')}
+  ${D.months.map(m=>{const diff=m.actual-m.target;const hu=m.actual>0?Math.round(m.cost/m.actual):0;return`<tr><td>${m.label}</td><td>${m.target}</td><td>${m.actual||'-'}</td><td class="${diff<0?'neg':''}">${m.actual?(sign(diff)+diff):'-'}</td><td>${m.apps||'-'}</td><td>${m.cost?fmtYK(m.cost):'-'}</td><td>${hu?fmtY(hu):'-'}</td></tr>`;}).join('')}
   <tr><td>合計</td><td>${D.months.reduce((s,m)=>s+m.target,0)}</td><td>${totalHired||'-'}</td><td class="${totalHired-D.target<0?'neg':'pos'}">${sign(totalHired-D.target)}${totalHired-D.target}</td><td>${totalApps||'-'}</td><td>${fmtYK(totalCost)}</td><td>${fmtY(unitCost)}</td></tr>
 </table>
 <h2>🏢 拠点別実績</h2>
 <table class="rpt-tbl">
-  <tr><th style="text-align:left">拠点</th><th>目標</th><th>応募数</th><th>入社数</th><th>充足率</th><th>採用単価</th></tr>
-  ${br.map(b=>{const r=pct(b.hired,b.target);const hu=b.hired>0?Math.round(b.cost/b.hired):0;return`<tr><td>${b.name}</td><td>${b.target}</td><td>${b.apps||0}</td><td>${b.hired}</td><td class="${r<60?'neg':''}">${r}%</td><td>${hu?fmtY(hu):'-'}</td></tr>`;}).join('')}
+  <tr><th style="text-align:left">拠点</th><th>応募数</th><th>入社数</th><th>採用コスト</th><th>採用単価</th><th>採用率</th></tr>
+  ${brs.map(([name,b])=>{const hu=b.hired>0?Math.round(b.cost/b.hired):0;return`<tr><td>${name}</td><td>${fmt(b.apps)}</td><td>${b.hired}</td><td>${b.cost?fmtYK(b.cost):'-'}</td><td>${hu?fmtY(hu):'-'}</td><td>${pct(b.hired,b.apps||1)}%</td></tr>`;}).join('')}
 </table>
-<h2>📣 媒体別実績</h2>
+<h2>📣 媒体別費用</h2>
 <table class="rpt-tbl">
-  <tr><th style="text-align:left">媒体</th><th>応募数</th><th>採用数</th><th>採用単価</th></tr>
-  ${md.map(m=>{const hu=m.hired>0?Math.round(m.cost/m.hired):0;return`<tr><td>${m.name}</td><td>${m.apps}</td><td>${m.hired}</td><td>${hu?fmtY(hu):'-'}</td></tr>`;}).join('')}
+  <tr><th style="text-align:left">媒体</th><th>採用コスト</th></tr>
+  ${mds.map(([name,m])=>`<tr><td>${name}</td><td>${fmtYK(m.cost)}</td></tr>`).join('')}
 </table>
-<h2>🔽 採用ファネル</h2>
-<table class="rpt-tbl">
-  <tr><th style="text-align:left">フェーズ</th><th>件数</th><th>通過率</th></tr>
-  ${f.map((fi,i)=>`<tr><td>${fi.name}</td><td>${fmt(fi.count)}</td><td>${i===0?'—':pct(fi.count,f[i-1]?.count)+'%'}</td></tr>`).join('')}
-</table>
-<div style="margin-top:1.5rem;padding-top:.75rem;border-top:.5px solid var(--border);font-size:10px;color:var(--t3)">採用KPIダッシュボード 自動生成レポート</div>`;
+<div style="margin-top:1.5rem;padding-top:.75rem;border-top:.5px solid var(--bd);font-size:10px;color:var(--t3)">採用KPIダッシュボード 自動生成</div>`;
+  G('rpt-modal').classList.add('open');
 }
+function closeReport(){ G('rpt-modal').classList.remove('open'); }
 
-// ═══════════════════════════════════
-// CHART TABS
-// ═══════════════════════════════════
-[{i:'1',l:'応募推移'},{i:'2',l:'採用推移'},{i:'3',l:'採用単価'},{i:'4',l:'媒体別'},{i:'5',l:'拠点別充足'},{i:'6',l:'年代別'},{i:'7',l:'拠点別採用'}].forEach(t=>{
-  const b=document.createElement('button');
-  b.className='tab'+(t.i==='1'?' active':'');
-  b.textContent=t.l;
-  b.onclick=()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.cp').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active'); G('cp-'+t.i).classList.add('active');
-  };
-  G('chart-tabs').appendChild(b);
-});
-
-// ═══════════════════════════════════
-// UI TOGGLES
-// ═══════════════════════════════════
-function toggleSync(){G('sync-bar').classList.toggle('open');}
-function toggleInput(){
-  const p=G('inp-panel');
-  const isOpen=p.classList.contains('open');
-  if(!isOpen) buildInputPanel();
-  p.classList.toggle('open');
-}
-function saveSync(){
-  D.ssId1=G('ss1').value.trim(); D.gid1=G('gid1').value.trim();
-  D.ssId2=G('ss2').value.trim(); D.gid2=G('gid2').value.trim();
-  save();
-}
-
-// ═══════════════════════════════════
+// ═══════════════════════════
 // INIT
-// ═══════════════════════════════════
+// ═══════════════════════════
 G('hd-date').textContent=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})+' 時点';
-load();
-G('ss1').value=D.ssId1||SAMPLE.ssId1;
-G('gid1').value=D.gid1||SAMPLE.gid1;
-G('ss2').value=D.ssId2||SAMPLE.ssId2;
-G('gid2').value=D.gid2||SAMPLE.gid2;
+if(loadSaved()){
+  G('status-bar').classList.add('show');
+  G('status-text').textContent='保存済みデータを読み込みました';
+}
 renderAll();
 </script>
 </body>
