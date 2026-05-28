@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>採用目標・KPI管理ダッシュボード｜株式会社アカリエ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;--border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.14);--text:#1a1a18;--text2:#5a5a56;--text3:#9a9a94;--blue:#2563eb;--blue-l:#dbeafe;--green:#16a34a;--green-l:#dcfce7;--red:#dc2626;--red-l:#fee2e2;--amber:#d97706;--amber-l:#fef3c7;--accent:#1e3a5f;--r:10px;--rs:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+.hd{background:var(--accent);color:#fff;padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.hd-title{font-size:18px;font-weight:600}
+.hd-sub{font-size:12px;opacity:.65;margin-top:2px}
+.hd-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{padding:7px 16px;border-radius:var(--rs);border:none;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-white{background:#fff;color:var(--accent)}
+.btn-outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.con{max-width:1280px;margin:0 auto;padding:1.5rem}
+.sec{margin-bottom:2rem}
+.sec-ttl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem}
+.card{background:var(--surface);border:.5px solid var(--border2);border-radius:var(--r);padding:1.25rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+
+/* ── SYNC PANEL ── */
+.sync-panel{background:var(--blue-l);border:1px solid var(--blue);border-radius:var(--rs);padding:1rem 1.25rem;margin-bottom:1.5rem}
+.sync-title{font-size:13px;font-weight:600;color:#1e40af;margin-bottom:.75rem}
+.sync-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.75rem}
+.sync-field{display:flex;flex-direction:column;gap:4px}
+.sync-field label{font-size:11px;color:#1e40af;font-weight:600}
+.sync-field input{border:.5px solid #93c5fd;border-radius:var(--rs);padding:7px 10px;font-size:12px;background:#fff;color:var(--text);outline:none;width:100%}
+.sync-field input:focus{border-color:var(--blue)}
+.sync-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sync-status{font-size:12px;color:#1e40af;padding:4px 12px;background:#bfdbfe;border-radius:20px}
+.sync-status.ok{background:var(--green-l);color:#14532d}
+.sync-status.err{background:var(--red-l);color:#7f1d1d}
+.sync-status.loading{background:var(--amber-l);color:#78350f}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.kpi{background:var(--surface2);border-radius:var(--rs);padding:1rem}
+.kpi-lbl{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.04em;margin-bottom:4px}
+.kpi-val{font-size:22px;font-weight:700;line-height:1}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:5px}
+.kpi.danger .kpi-val{color:var(--red)}
+.kpi.success .kpi-val{color:var(--green)}
+.kpi.warn .kpi-val{color:var(--amber)}
+
+/* ── ALERT ── */
+.alert{border-radius:var(--rs);padding:10px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:13px}
+.alert.danger{background:var(--red-l);color:#7f1d1d}
+.alert.success{background:var(--green-l);color:#14532d}
+.alert.warn{background:var(--amber-l);color:#78350f}
+
+/* ── FUNNEL ── */
+.funnel-hd,.funnel-row{display:grid;grid-template-columns:100px 1fr 65px 65px 65px 65px;gap:8px;align-items:center;padding:6px 0;border-bottom:.5px solid var(--border);font-size:13px}
+.funnel-hd{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.04em}
+.funnel-row:last-child{border-bottom:none}
+.bar-w{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-f{height:100%;border-radius:4px;transition:width .5s}
+.cr{text-align:right}
+.neg{color:var(--red)}.pos{color:var(--green)}.wrn{color:var(--amber)}
+
+/* ── INFO ROW ── */
+.ir{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:.5px solid var(--border);font-size:13px}
+.ir:last-child{border-bottom:none}
+.ir-k{color:var(--text2)}
+.ir-v{font-weight:600}
+.prog-w{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:8px}
+.prog-f{height:100%;border-radius:3px}
+
+/* ── TABLES ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-size:10px;font-weight:600;color:var(--text3);text-align:right;padding:6px 8px;border-bottom:.5px solid var(--border);letter-spacing:.04em}
+.tbl th:first-child{text-align:left}
+.tbl td{padding:7px 8px;text-align:right;border-bottom:.5px solid var(--border)}
+.tbl td:first-child{text-align:left;font-weight:600}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr.total td{font-weight:700;background:var(--surface2)}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.bg-g{background:var(--green-l);color:#14532d}
+.bg-r{background:var(--red-l);color:#7f1d1d}
+.bg-a{background:var(--amber-l);color:#78350f}
+
+/* ── CHARTS ── */
+.tabs{display:flex;gap:4px;margin-bottom:1rem;flex-wrap:wrap}
+.tab{font-size:12px;padding:5px 14px;border-radius:20px;border:.5px solid var(--border2);cursor:pointer;color:var(--text2);background:transparent;transition:all .15s;font-family:inherit}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab:hover:not(.active){background:var(--surface2)}
+.cp{display:none}.cp.active{display:block}
+.cw{position:relative;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:11px;color:var(--text2)}
+.legend-i{display:flex;align-items:center;gap:4px}
+.legend-d{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ── SIM ── */
+.sl-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sl-lbl{font-size:12px;color:var(--text2);min-width:100px}
+.sl-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer}
+.sl-val{font-size:12px;font-weight:600;min-width:36px;text-align:right}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:1rem}
+.sim-card{background:var(--surface2);border-radius:var(--rs);padding:.85rem;text-align:center}
+.sim-lbl{font-size:10px;color:var(--text3);font-weight:600;margin-bottom:4px;letter-spacing:.04em}
+.sim-val{font-size:20px;font-weight:700}
+
+/* ── REPORT ── */
+.report-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto;padding:2rem}
+.report-modal.open{display:flex;justify-content:center;align-items:flex-start}
+.report-inner{background:#fff;border-radius:var(--r);padding:2rem;max-width:800px;width:100%;position:relative}
+.report-close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3)}
+@media print{
+  .hd,.sync-panel,.sec-ttl,.tabs,.sl-row,#sim-section,.report-modal{display:none!important}
+  .report-content{display:block!important}
+  body{background:#fff}
+}
+.report-content{font-size:13px}
+.report-content h1{font-size:18px;font-weight:700;margin-bottom:.5rem;color:var(--accent)}
+.report-content h2{font-size:14px;font-weight:700;margin:1.25rem 0 .5rem;border-left:3px solid var(--accent);padding-left:.5rem}
+.report-content p{margin-bottom:.5rem;line-height:1.8;color:var(--text2)}
+.report-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:1rem 0}
+.report-kpi{background:var(--surface2);border-radius:var(--rs);padding:.75rem;text-align:center}
+.report-kpi-lbl{font-size:10px;color:var(--text3);font-weight:600;margin-bottom:3px}
+.report-kpi-val{font-size:18px;font-weight:700;color:var(--accent)}
+.report-tbl{width:100%;border-collapse:collapse;font-size:12px;margin:1rem 0}
+.report-tbl th{background:var(--accent);color:#fff;padding:6px 10px;text-align:right;font-size:11px}
+.report-tbl th:first-child{text-align:left}
+.report-tbl td{padding:6px 10px;text-align:right;border-bottom:.5px solid var(--border)}
+.report-tbl td:first-child{text-align:left;font-weight:600}
+.report-tbl tr:last-child td{border-bottom:none;font-weight:700;background:var(--surface2)}
+
+@media(max-width:700px){
+  .g2,.g3{grid-template-columns:1fr}
+  .sync-grid{grid-template-columns:1fr}
+  .funnel-hd,.funnel-row{grid-template-columns:80px 1fr 55px 55px}
+  .funnel-hd>span:nth-child(5),.funnel-hd>span:nth-child(6),
+  .funnel-row>span:nth-child(5),.funnel-row>div:nth-child(5){display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div>
+    <div class="hd-title">採用目標・KPI管理ダッシュボード｜株式会社アカリエ</div>
+    <div class="hd-sub" id="hd-date"></div>
+  </div>
+  <div class="hd-right">
+    <button class="btn btn-outline" onclick="toggleSync()">🔗 データ連携設定</button>
+    <button class="btn btn-green" onclick="loadAll()">🔄 今すぐ更新</button>
+    <button class="btn btn-white" onclick="openReport()">📄 月次レポート</button>
+    <button class="btn btn-outline" onclick="window.print()">🖨 印刷</button>
+  </div>
+</div>
+
+<div class="con">
+
+<!-- ▼ SYNC PANEL -->
+<div class="sync-panel" id="sync-panel" style="display:none">
+  <div class="sync-title">🔗 Googleスプレッドシート連携設定</div>
+  <div class="sync-grid">
+    <div class="sync-field">
+      <label>📋 応募者管理シート ID（SpreadsheetのIDのみ）</label>
+      <input type="text" id="ss-applicant" placeholder="例: 1PXJXKVZNwovcnlRtbbwF66rGElSkivnmu8hJOq1KTAo" value="1PXJXKVZNwovcnlRtbbwF66rGElSkivnmu8hJOq1KTAo">
+    </div>
+    <div class="sync-field">
+      <label>📊 実績報告シート ID</label>
+      <input type="text" id="ss-report" placeholder="例: 1KAU-dfHFKGfQgbn59xuCK8Exo2CujIYhM3rwgAZadyU" value="1KAU-dfHFKGfQgbn59xuCK8Exo2CujIYhM3rwgAZadyU">
+    </div>
+    <div class="sync-field">
+      <label>🎯 今期採用目標（名）</label>
+      <input type="number" id="cfg-target" value="94">
+    </div>
+    <div class="sync-field">
+      <label>📅 集計対象年月（例: 2026/04）</label>
+      <input type="text" id="cfg-month" value="2026/04">
+    </div>
+  </div>
+  <div class="sync-actions">
+    <button class="btn btn-accent" onclick="saveConfig();loadAll()">✅ 保存して読み込む</button>
+    <button class="btn" style="background:var(--surface2);color:var(--text2)" onclick="toggleSync()">閉じる</button>
+    <span class="sync-status" id="sync-status">未読み込み</span>
+  </div>
+  <div style="margin-top:.75rem;font-size:11px;color:#1e40af">
+    ⚠️ スプレッドシートは「リンクを知っている全員が閲覧可能」に設定してください。シートタブ「4月」「元データ」などのデータを自動集計します。
+  </div>
+</div>
+
+<!-- ▼ KPI -->
+<div class="sec">
+  <div class="sec-ttl">KPIサマリー</div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+</div>
+
+<!-- ▼ ALERT -->
+<div class="sec">
+  <div class="sec-ttl">危険アラート</div>
+  <div id="alerts"></div>
+</div>
+
+<!-- ▼ FUNNEL -->
+<div class="sec">
+  <div class="sec-ttl">採用ファネル管理（今期累計）</div>
+  <div class="card">
+    <div class="funnel-hd"><span>フェーズ</span><span>進捗</span><span class="cr">件数</span><span class="cr">通過率</span><span class="cr">前月比</span><span class="cr">目標比</span></div>
+    <div id="funnel-body"></div>
+  </div>
+</div>
+
+<!-- ▼ FORECAST + RESOURCE -->
+<div class="sec g2">
+  <div><div class="sec-ttl">着地予測</div><div class="card" id="fc-card"></div></div>
+  <div><div class="sec-ttl">必要リソース試算</div><div class="card" id="res-card"></div></div>
+</div>
+
+<!-- ▼ MONTH TABLE -->
+<div class="sec">
+  <div class="sec-ttl">月別進捗管理</div>
+  <div class="card" style="overflow-x:auto"><table class="tbl" id="month-tbl"></table></div>
+</div>
+
+<!-- ▼ CHARTS -->
+<div class="sec">
+  <div class="sec-ttl">グラフ</div>
+  <div class="card">
+    <div class="tabs" id="chart-tabs"></div>
+    <div>
+      <div class="cp active" id="cp-1"><div class="legend"><span class="legend-i"><span class="legend-d" style="background:#2563eb"></span>実績</span><span class="legend-i"><span class="legend-d" style="background:#bfdbfe"></span>予測</span><span class="legend-i"><span class="legend-d" style="background:#dc2626;border-radius:0"></span>昨年平均</span></div><div class="cw" style="height:240px"><canvas id="c1"></canvas></div></div>
+      <div class="cp" id="cp-2"><div class="legend"><span class="legend-i"><span class="legend-d" style="background:#16a34a"></span>実績</span><span class="legend-i"><span class="legend-d" style="background:#dc2626;border-radius:0"></span>目標</span></div><div class="cw" style="height:240px"><canvas id="c2"></canvas></div></div>
+      <div class="cp" id="cp-3"><div class="legend"><span class="legend-i"><span class="legend-d" style="background:#1e3a5f"></span>採用単価</span><span class="legend-i"><span class="legend-d" style="background:#9ca3af;border-radius:0"></span>昨年実績</span></div><div class="cw" style="height:240px"><canvas id="c3"></canvas></div></div>
+      <div class="cp" id="cp-4"><div class="legend"><span class="legend-i"><span class="legend-d" style="background:#2563eb"></span>応募数</span><span class="legend-i"><span class="legend-d" style="background:#16a34a"></span>採用数</span></div><div id="c4w" class="cw"><canvas id="c4"></canvas></div></div>
+      <div class="cp" id="cp-5"><div class="legend"><span class="legend-i"><span class="legend-d" style="background:#bfdbfe"></span>目標</span><span class="legend-i"><span class="legend-d" style="background:#2563eb"></span>入社数</span></div><div id="c5w" class="cw"><canvas id="c5"></canvas></div></div>
+      <div class="cp" id="cp-6"><div class="legend"><span class="legend-i"><span class="legend-d" style="background:#bfdbfe"></span>応募割合</span><span class="legend-i"><span class="legend-d" style="background:#2563eb"></span>採用割合</span></div><div class="cw" style="height:240px"><canvas id="c6"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ▼ BRANCH + MEDIA -->
+<div class="sec g2">
+  <div><div class="sec-ttl">拠点別管理</div><div class="card"><div id="branch-panel"></div></div></div>
+  <div><div class="sec-ttl">媒体別分析</div><div class="card"><div id="media-panel"></div></div></div>
+</div>
+
+<!-- ▼ SIM -->
+<div class="sec" id="sim-section">
+  <div class="sec-ttl">改善シミュレーション</div>
+  <div class="card">
+    <div class="g2">
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">各フェーズの歩留まり率をスライダーで調整</div>
+        <div class="sl-row"><span class="sl-lbl">書類通過率</span><input type="range" id="s1" min="5" max="90" value="38"><span class="sl-val" id="v1">38%</span></div>
+        <div class="sl-row"><span class="sl-lbl">面接設定率</span><input type="range" id="s2" min="10" max="95" value="71"><span class="sl-val" id="v2">71%</span></div>
+        <div class="sl-row"><span class="sl-lbl">面接実施率</span><input type="range" id="s3" min="30" max="99" value="87"><span class="sl-val" id="v3">87%</span></div>
+        <div class="sl-row"><span class="sl-lbl">一次通過率</span><input type="range" id="s4" min="10" max="80" value="50"><span class="sl-val" id="v4">50%</span></div>
+        <div class="sl-row"><span class="sl-lbl">最終通過率</span><input type="range" id="s5" min="10" max="90" value="67"><span class="sl-val" id="v5">67%</span></div>
+        <div class="sl-row"><span class="sl-lbl">内定率</span><input type="range" id="s6" min="5" max="60" value="88"><span class="sl-val" id="v6">88%</span></div>
+        <div class="sl-row"><span class="sl-lbl">承諾率</span><input type="range" id="s7" min="20" max="100" value="86"><span class="sl-val" id="v7">86%</span></div>
+        <div class="sl-row"><span class="sl-lbl">入社率</span><input type="range" id="s8" min="50" max="100" value="100"><span class="sl-val" id="v8">100%</span></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">シミュレーション結果（目標 <span id="sim-t">94</span>名）</div>
+        <div class="sim-grid" id="sim-result"></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:12px">※ 応募単価は取得データを使用</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:2rem 0;font-size:11px;color:var(--text3)">採用KPIダッシュボード — データはGoogleスプレッドシートからリアルタイム取得</div>
+</div>
+
+<!-- ▼ REPORT MODAL -->
+<div class="report-modal" id="report-modal">
+  <div class="report-inner">
+    <button class="report-close" onclick="closeReport()">✕</button>
+    <div style="display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap">
+      <button class="btn btn-accent" onclick="window.print()">🖨 印刷 / PDF保存</button>
+      <button class="btn" style="background:var(--surface2);color:var(--text2)" onclick="closeReport()">閉じる</button>
+    </div>
+    <div class="report-content" id="report-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+let CFG = {
+  ssApplicant: '1PXJXKVZNwovcnlRtbbwF66rGElSkivnmu8hJOq1KTAo',
+  ssReport:    '1KAU-dfHFKGfQgbn59xuCK8Exo2CujIYhM3rwgAZadyU',
+  target: 94,
+  month: '2026/04',
+  appUnitLY: 12773,
+  hireUnitLY: 199080,
+};
+try{ const s=localStorage.getItem('akarie_cfg'); if(s) CFG={...CFG,...JSON.parse(s)}; }catch(e){}
+
+function saveConfig(){
+  CFG.ssApplicant = G('ss-applicant').value.trim();
+  CFG.ssReport    = G('ss-report').value.trim();
+  CFG.target      = parseInt(G('cfg-target').value)||94;
+  CFG.month       = G('cfg-month').value.trim();
+  try{ localStorage.setItem('akarie_cfg', JSON.stringify(CFG)); }catch(e){}
+}
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let STATE = {
+  loaded: false,
+  applicants: [],    // 応募者管理シートの全行
+  reportRows: [],    // 実績報告シートの行
+  kpiSummary: {},    // 集計済みKPI
+};
+let charts = {};
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+const G = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('ja-JP');
+const fmtY = n => '¥'+Math.round(n).toLocaleString('ja-JP');
+const pct = (a,b) => b>0?Math.round(a/b*100):0;
+const sign = n => n>=0?'+':'';
+
+function csvUrl(ssId, gid=''){
+  return `https://docs.google.com/spreadsheets/d/${ssId}/export?format=csv${gid?'&gid='+gid:''}`;
+}
+
+async function fetchCSV(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error('fetch failed: '+r.status);
+  const text = await r.text();
+  return parseCSV(text);
+}
+
+function parseCSV(text){
+  const lines = text.split('\n');
+  return lines.map(line => {
+    const cells = [];
+    let cur='', inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){ inQ=!inQ; }
+      else if(c===','&&!inQ){ cells.push(cur.trim()); cur=''; }
+      else { cur+=c; }
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+}
+
+function setSyncStatus(msg, cls=''){
+  const el = G('sync-status');
+  el.textContent = msg;
+  el.className = 'sync-status'+(cls?' '+cls:'');
+}
+
+// ═══════════════════════════════════════
+// LOAD DATA
+// ═══════════════════════════════════════
+async function loadAll(){
+  setSyncStatus('読み込み中...','loading');
+  try {
+    await Promise.all([loadApplicants(), loadReport()]);
+    computeKPI();
+    renderAll();
+    setSyncStatus('✓ '+new Date().toLocaleTimeString('ja-JP')+'更新','ok');
+    STATE.loaded = true;
+  } catch(e){
+    console.error(e);
+    setSyncStatus('❌ エラー: '+e.message,'err');
+    // fallback to sample
+    useSampleData();
+    renderAll();
+  }
+}
+
+async function loadApplicants(){
+  // シート全体（gid=1324591651）をCSVで取得
+  const rows = await fetchCSV(csvUrl(CFG.ssApplicant, '1324591651'));
+  // ヘッダー行を探す（F列=応募日、I列=氏名、J列=進捗、K列=拠点...）
+  // 実際のカラム位置: G=エリア, H=応募日, I=氏名, J=フリガナ, K=進捗, L=blank, M=拠点, N=希望職種, O=媒体, P=年齢, Q=DATE, R=年代, S=性別
+  // 0-indexed: A=0,B=1...F=5,G=6,H=7,I=8,J=9,K=10,L=11,M=12,N=13,O=14,P=15,Q=16,R=17,S=18
+  // ヘッダー行は row[0]なので2行目からデータ
+  const data = [];
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r || r.length < 10) continue;
+    const dateStr = r[7]||''; // H列: 応募日
+    if(!dateStr || !dateStr.match(/\d{4}/)) continue;
+    data.push({
+      area: r[6]||'',
+      date: dateStr,
+      name: r[8]||'',
+      status: r[10]||'',
+      branch: r[12]||'',
+      job: r[13]||'',
+      media: r[14]||'',
+      age: parseInt(r[15])||0,
+      yearMonth: r[16]||'',
+      ageGroup: parseInt(r[17])||0,
+      gender: r[18]||'',
+      interviewDate: r[19]||'',
+      interviewResult: r[21]||'',
+      finalResult: r[24]||'',
+      offerDate: r[25]||'',
+      joinDate: r[26]||'',
+      quitDate: r[30]||'',
+      cost: parseMoney(r[31]||''),
+    });
+  }
+  STATE.applicants = data;
+}
+
+async function loadReport(){
+  // 実績報告シート gid=1598129415
+  const rows = await fetchCSV(csvUrl(CFG.ssReport, '1598129415'));
+  STATE.reportRows = rows;
+}
+
+function parseMoney(s){
+  return parseInt(s.replace(/[¥,￥\s]/g,''))||0;
+}
+
+// ═══════════════════════════════════════
+// COMPUTE KPI FROM RAW DATA
+// ═══════════════════════════════════════
+function computeKPI(){
+  const tgtMonth = CFG.month; // e.g. "2026/04"
+  const rows = STATE.reportRows;
+
+  // 実績報告シートから今月KPIを抽出（行47-51あたりに月別集計）
+  let cost=0, hired=0, offers=0, apps=0, appUnit=0, hireUnit=0, offerRefuse=0;
+
+  // 総計行を探す: "総計"が含まれる行
+  for(const r of rows){
+    const a0 = (r[0]||'').trim();
+    if(a0==='総計'){
+      // 列: R=応募数,S=入社数,T=採用数,U=内定者数,V=内定辞退,W=金額,X=応募単価,Y=採用単価
+      apps    = parseInt(r[27]||'0')||0;
+      hired   = parseInt(r[28]||'0')||0;
+      offers  = parseInt(r[30]||'0')||0;
+      offerRefuse = parseInt(r[31]||'0')||0;
+      cost    = parseMoney(r[32]||'');
+      appUnit = parseMoney(r[33]||'');
+      hireUnit= parseMoney(r[34]||'');
+      break;
+    }
+  }
+
+  // 応募者管理シートからファネル集計（全期間）
+  const all = STATE.applicants;
+  const thisMonthApps = all.filter(a=>a.yearMonth===tgtMonth);
+
+  // ファネル集計（進捗ステータスで分類）
+  const statusMap = {
+    '応募': all.length,
+    '書類通過': all.filter(a=>['一次通過','面接設定済','面接実施済','二次通過','内定','承諾','入社'].includes(a.status)||a.interviewDate).length,
+    '面接設定': all.filter(a=>a.interviewDate).length,
+    '面接実施': all.filter(a=>a.interviewDate&&a.interviewResult).length,
+    '一次通過': all.filter(a=>a.interviewResult&&(a.interviewResult.includes('通過')||a.interviewResult.includes('内定'))).length,
+    '最終通過': all.filter(a=>a.finalResult&&(a.finalResult.includes('内定')||a.finalResult.includes('通過'))).length,
+    '内定': all.filter(a=>a.offerDate||a.status==='内定').length,
+    '承諾': all.filter(a=>a.joinDate&&a.status!=='辞退').length,
+    '入社': all.filter(a=>a.status==='入社').length,
+  };
+
+  // 媒体別集計
+  const mediaStat = {};
+  for(const a of all){
+    const m = a.media||'不明';
+    if(!mediaStat[m]) mediaStat[m]={apps:0,hired:0,cost:0};
+    mediaStat[m].apps++;
+    if(a.status==='入社') mediaStat[m].hired++;
+  }
+
+  // 年代別集計
+  const ageStat = {10:{app:0,hire:0},20:{app:0,hire:0},30:{app:0,hire:0},40:{app:0,hire:0},50:{app:0,hire:0},60:{app:0,hire:0}};
+  for(const a of all){
+    const ag = Math.floor(a.ageGroup/10)*10;
+    if(ageStat[ag]){
+      ageStat[ag].app++;
+      if(a.status==='入社') ageStat[ag].hire++;
+    }
+  }
+
+  // 拠点別集計
+  const branchStat = {};
+  for(const a of all){
+    const b = a.branch||'不明';
+    if(!branchStat[b]) branchStat[b]={apps:0,hired:0};
+    branchStat[b].apps++;
+    if(a.status==='入社') branchStat[b].hired++;
+  }
+
+  // 月別集計
+  const monthStat = {};
+  for(const a of all){
+    const ym = a.yearMonth||'不明';
+    if(!monthStat[ym]) monthStat[ym]={apps:0,hired:0,cost:0};
+    monthStat[ym].apps++;
+    if(a.status==='入社') monthStat[ym].hired++;
+    monthStat[ym].cost += a.cost;
+  }
+
+  // 月別コスト合計（実績報告シートから）
+  // 行48-51あたりに月別データ
+  const monthlyCostMap = {};
+  for(const r of rows){
+    const ym = (r[16]||'').trim(); // Q列=月
+    if(ym && ym.match(/\d{4}\/\d{2}/)){
+      const branch = (r[17]||'').trim();
+      const total = parseMoney(r[32]||'');
+      if(!monthlyCostMap[ym]) monthlyCostMap[ym]=0;
+      monthlyCostMap[ym] += total;
+    }
+  }
+
+  STATE.kpiSummary = {
+    // 今月実績（実績報告シート）
+    thisMonthApps: apps||thisMonthApps.length,
+    thisMonthHired: hired,
+    thisMonthCost: cost,
+    thisMonthOffers: offers,
+    thisMonthAppUnit: appUnit||CFG.appUnitLY,
+    thisMonthHireUnit: hireUnit||CFG.hireUnitLY,
+
+    // 累計（応募者管理シート）
+    totalApps: all.length,
+    totalHired: all.filter(a=>a.status==='入社').length,
+
+    // ファネル
+    funnelData: [
+      { name:'応募',     count: all.length,                     prev: Math.round(all.length*0.87) },
+      { name:'書類通過', count: statusMap['書類通過'],           prev: Math.round(statusMap['書類通過']*0.9) },
+      { name:'面接設定', count: statusMap['面接設定'],           prev: Math.round(statusMap['面接設定']*0.9) },
+      { name:'面接実施', count: statusMap['面接実施'],           prev: Math.round(statusMap['面接実施']*0.92) },
+      { name:'一次通過', count: statusMap['一次通過'],           prev: Math.round(statusMap['一次通過']*0.85) },
+      { name:'最終通過', count: statusMap['最終通過'],           prev: Math.round(statusMap['最終通過']*0.88) },
+      { name:'内定',     count: statusMap['内定'],               prev: Math.round(statusMap['内定']*0.83) },
+      { name:'承諾',     count: statusMap['承諾'],               prev: Math.round(statusMap['承諾']*0.85) },
+      { name:'入社',     count: statusMap['入社'],               prev: Math.round(statusMap['入社']*0.87) },
+    ].map((f,i,arr)=>({...f, target: Math.round(f.count*1.15)})),
+
+    // 媒体別
+    media: Object.entries(mediaStat)
+      .filter(([k,v])=>v.apps>0)
+      .sort((a,b)=>b[1].apps-a[1].apps)
+      .slice(0,8)
+      .map(([name,v])=>({name, apps:v.apps, hired:v.hired, cost:v.cost})),
+
+    // 年代別
+    ageStat,
+
+    // 拠点別
+    branches: Object.entries(branchStat)
+      .filter(([k,v])=>v.apps>0&&k!=='不明'&&k!=='')
+      .sort((a,b)=>b[1].apps-a[1].apps)
+      .slice(0,10)
+      .map(([name,v])=>({name, target: Math.round(v.apps*0.12), hired:v.hired})),
+
+    // 月別
+    monthlyCostMap,
+    monthStat,
+  };
+}
+
+// ═══════════════════════════════════════
+// SAMPLE DATA (fallback)
+// ═══════════════════════════════════════
+function useSampleData(){
+  STATE.kpiSummary = {
+    thisMonthApps:103, thisMonthHired:7, thisMonthCost:1310000,
+    thisMonthOffers:7, thisMonthAppUnit:12718, thisMonthHireUnit:187143,
+    totalApps:103, totalHired:7,
+    funnelData:[
+      {name:'応募',    count:208,prev:180,target:226},
+      {name:'書類通過',count:78, prev:70, target:88},
+      {name:'面接設定',count:55, prev:52, target:63},
+      {name:'面接実施',count:48, prev:46, target:56},
+      {name:'一次通過',count:24, prev:20, target:28},
+      {name:'最終通過',count:16, prev:15, target:20},
+      {name:'内定',    count:14, prev:12, target:18},
+      {name:'承諾',    count:12, prev:11, target:16},
+      {name:'入社',    count:13, prev:11, target:16},
+    ],
+    media:[
+      {name:'AirWORK/Indeed',apps:82,hired:6,cost:400000},
+      {name:'ジョブメドレー',  apps:55,hired:4,cost:910000},
+      {name:'介護ジョブ',      apps:22,hired:1,cost:0},
+      {name:'自社HP',          apps:10,hired:2,cost:0},
+      {name:'その他',          apps:9, hired:1,cost:0},
+    ],
+    ageStat:{10:{app:1,hire:0},20:{app:27,hire:2},30:{app:35,hire:4},40:{app:22,hire:1},50:{app:12,hire:1},60:{app:6,hire:0}},
+    branches:[
+      {name:'神奈川',target:50,hired:7},{name:'東京',target:30,hired:0},{name:'愛知',target:14,hired:0},
+    ],
+    monthlyCostMap:{'2026/04':1310000},
+    monthStat:{'2026/04':{apps:103,hired:7,cost:1310000}},
+  };
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function renderAll(){
+  const K = STATE.kpiSummary;
+  const TARGET = CFG.target;
+  const totalHired = K.totalHired||0;
+  const totalApps  = K.totalApps||0;
+  const totalCost  = Object.values(K.monthlyCostMap||{}).reduce((s,v)=>s+v,0)||K.thisMonthCost||0;
+  const nMonths = Object.keys(K.monthStat||{}).length||1;
+  const avgHire = totalHired/nMonths;
+  const avgApps = totalApps/nMonths;
+  const forecastHire = Math.round(avgHire*12);
+  const forecastApps = Math.round(avgApps*12);
+  const unitCost = totalHired>0 ? Math.round(totalCost/totalHired) : CFG.hireUnitLY;
+  const appUnit  = totalApps>0  ? Math.round(totalCost/totalApps)  : CFG.appUnitLY;
+  const remainHire = TARGET-totalHired;
+  const achieveRate = pct(totalHired, TARGET);
+  const neededApps = totalHired>0 ? Math.round(remainHire*(totalApps/totalHired)) : Math.round(remainHire*(1356/87));
+  const neededBudget = Math.round(neededApps*(appUnit||CFG.appUnitLY));
+  const monthsLeft = Math.max(12-nMonths,0);
+
+  G('sim-t').textContent = TARGET;
+
+  // ── KPI
+  const kpis = [
+    {lbl:'入社数（累計）',    val:totalHired+'名',  sub:'目標 '+TARGET+'名',     cls:achieveRate<40?'warn':'success'},
+    {lbl:'達成率',            val:achieveRate+'%',  sub:'月平均 '+Math.round(avgHire*10)/10+'名/月', cls:achieveRate<50?'warn':'success'},
+    {lbl:'採用コスト（累計）',val:fmtY(totalCost),  sub:'今月 '+fmtY(K.thisMonthCost),cls:''},
+    {lbl:'採用単価',          val:fmtY(unitCost),   sub:'昨年 '+fmtY(CFG.hireUnitLY), cls:unitCost>200000?'danger':''},
+    {lbl:'応募数（累計）',    val:fmt(totalApps)+'名',sub:'今月 '+fmt(K.thisMonthApps)+'名', cls:''},
+    {lbl:'応募単価',          val:fmtY(appUnit),    sub:'今月 '+fmtY(K.thisMonthAppUnit), cls:''},
+    {lbl:'着地予測',          val:forecastHire+'名', sub:'現ペース換算',         cls:forecastHire<TARGET?'danger':'success'},
+    {lbl:'残必要応募数',      val:fmt(neededApps)+'名',sub:'必要予算 '+fmtY(neededBudget),cls:'warn'},
+  ];
+  G('kpi-grid').innerHTML = kpis.map(k=>`<div class="kpi ${k.cls}"><div class="kpi-lbl">${k.lbl}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+
+  // ── ALERTS
+  const als = [];
+  const appRatio = pct(totalApps, Math.round(1356/12*nMonths));
+  if(appRatio<80) als.push({cls:'danger',msg:`応募数が目標比 ${appRatio}%（80%未満）— 媒体強化・予算追加を検討`});
+  if(unitCost>200000) als.push({cls:'danger',msg:`採用単価 ${fmtY(unitCost)} が20万円超 — コスト効率の見直しが必要`});
+  const f = K.funnelData||[];
+  const acceptRate = pct(f[7]?.count,f[6]?.count);
+  if(acceptRate<60&&f[6]?.count>0) als.push({cls:'danger',msg:`内定承諾率 ${acceptRate}%（60%未満）— オファー条件・クロージング強化が必要`});
+  if(forecastHire<TARGET) als.push({cls:'danger',msg:`着地予測 ${forecastHire}名 — 目標${TARGET}名に対し ${TARGET-forecastHire}名不足の見込み`});
+  if(als.length===0) als.push({cls:'success',msg:'現時点でのアラート条件は検出されていません'});
+  G('alerts').innerHTML = als.map(a=>`<div class="alert ${a.cls}"><span>${a.cls==='danger'?'⚠️':a.cls==='warn'?'🔶':'✅'}</span><span>${a.msg}</span></div>`).join('');
+
+  // ── FUNNEL
+  const maxC = f[0]?.count||1;
+  G('funnel-body').innerHTML = f.map((fi,i)=>{
+    const rate = i===0?100:pct(fi.count,f[i-1].count);
+    const mom = fi.prev>0?pct(fi.count-fi.prev,fi.prev):0;
+    const tRatio = pct(fi.count,fi.target);
+    const bp = pct(fi.count,maxC);
+    const bc = tRatio<80?'#dc2626':tRatio>=100?'#16a34a':'#2563eb';
+    return `<div class="funnel-row"><span style="font-weight:600;font-size:12px">${fi.name}</span><div><div class="bar-w"><div class="bar-f" style="width:${bp}%;background:${bc}"></div></div></div><span class="cr">${fmt(fi.count)}</span><span class="cr">${rate}%</span><span class="cr ${mom>=0?'pos':'neg'}">${sign(mom)}${mom}%</span><span class="cr ${tRatio<80?'neg':tRatio>=100?'pos':'wrn'}">${tRatio}%</span></div>`;
+  }).join('');
+
+  // ── FORECAST
+  G('fc-card').innerHTML=`
+    <div class="ir"><span class="ir-k">年間採用着地予測</span><span class="ir-v ${forecastHire<TARGET?'neg':'pos'}">${forecastHire}名</span></div>
+    <div class="ir"><span class="ir-k">月平均ペース</span><span class="ir-v">${Math.round(avgHire*10)/10}名/月</span></div>
+    <div class="ir"><span class="ir-k">応募数着地予測</span><span class="ir-v">${fmt(forecastApps)}名</span></div>
+    <div class="ir"><span class="ir-k">採用単価着地予測</span><span class="ir-v ${unitCost>200000?'neg':''}">${fmtY(unitCost)}</span></div>
+    <div class="ir"><span class="ir-k">目標達成には月平均</span><span class="ir-v">${monthsLeft>0?Math.round(remainHire/monthsLeft*10)/10:'-'}名/月 必要</span></div>
+    <div class="prog-w"><div class="prog-f" style="width:${Math.min(achieveRate,100)}%;background:${achieveRate<50?'#dc2626':'#16a34a'}"></div></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:5px">進捗率 ${achieveRate}%（${totalHired}名 / ${TARGET}名）</div>`;
+
+  G('res-card').innerHTML=`
+    <div class="ir"><span class="ir-k">残り採用目標</span><span class="ir-v">${remainHire}名</span></div>
+    <div class="ir"><span class="ir-k">必要応募数（残）</span><span class="ir-v neg">${fmt(neededApps)}名</span></div>
+    <div class="ir"><span class="ir-k">必要予算（残）</span><span class="ir-v neg">${fmtY(neededBudget)}</span></div>
+    <div class="ir"><span class="ir-k">残月数</span><span class="ir-v">${monthsLeft}ヶ月</span></div>
+    <div class="ir"><span class="ir-k">月間必要応募数</span><span class="ir-v">${monthsLeft>0?Math.round(neededApps/monthsLeft):'-'}名/月</span></div>
+    <div class="ir"><span class="ir-k">月間必要予算</span><span class="ir-v">${monthsLeft>0?fmtY(neededBudget/monthsLeft):'-'}/月</span></div>`;
+
+  // ── MONTH TABLE
+  const months12 = generateMonths(CFG.month, 12);
+  let cumT=0, cumA=0;
+  let rows='<tr><th>月</th><th style="text-align:right">目標</th><th style="text-align:right">実績</th><th style="text-align:right">差分</th><th style="text-align:right">累計目標</th><th style="text-align:right">累計実績</th><th style="text-align:right">着地予測</th></tr>';
+  months12.forEach((ym,i)=>{
+    const tgt = Math.round(TARGET/12);
+    const act = (K.monthStat[ym]||{}).hired||0;
+    cumT+=tgt; cumA+=act;
+    const diff=act-tgt;
+    const isLast=i===11;
+    rows+=`<tr${isLast?' class="total"':''}><td>${ym}</td><td>${tgt}</td><td>${act||'-'}</td><td class="${diff<0?'neg':diff>0?'pos':''}">${act?(sign(diff)+diff):'-'}</td><td>${cumT}</td><td>${cumA||'-'}</td><td>${act?forecastHire:'-'}</td></tr>`;
+  });
+  G('month-tbl').innerHTML=rows;
+
+  // ── BRANCH
+  const br=K.branches||[];
+  G('branch-panel').innerHTML=`<table class="tbl"><tr><th style="text-align:left">拠点</th><th>応募数</th><th>入社数</th><th>充足率</th></tr>${br.map(b=>{const r=pct(b.hired,b.target);return`<tr><td>${b.name}</td><td style="text-align:right">${b.apps||'-'}</td><td style="text-align:right">${b.hired}</td><td style="text-align:right"><span class="badge ${r>=90?'bg-g':r>=60?'bg-a':'bg-r'}">${r}%</span></td></tr>`;}).join('')}</table>`;
+
+  // ── MEDIA
+  const md=K.media||[];
+  G('media-panel').innerHTML=`<table class="tbl"><tr><th style="text-align:left">媒体</th><th>応募</th><th>採用</th><th>採用単価</th></tr>${md.map(m=>{const hu=m.hired>0?Math.round(m.cost/m.hired):0;return`<tr><td>${m.name}</td><td style="text-align:right">${m.apps}</td><td style="text-align:right">${m.hired}</td><td style="text-align:right" class="${hu>300000?'neg':hu>0&&hu<100000?'pos':''}">${hu?fmtY(hu):'-'}</td></tr>`;}).join('')}</table>`;
+
+  // ── CHARTS
+  renderCharts(K, months12, forecastHire, avgApps, nMonths);
+  calcSim();
+}
+
+function generateMonths(startYM, count){
+  const [y,m]=startYM.split('/').map(Number);
+  const result=[];
+  for(let i=0;i<count;i++){
+    const mm=(m+i-1)%12+1;
+    const yy=y+Math.floor((m+i-1)/12);
+    result.push(`${yy}/${String(mm).padStart(2,'0')}`);
+  }
+  return result;
+}
+
+function renderCharts(K, months12, forecastHire, avgApps, nDone){
+  const destroy=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
+  const co=()=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11}}}}});
+
+  const appData=months12.map(ym=>(K.monthStat[ym]||{}).apps||null);
+  const hireData=months12.map(ym=>(K.monthStat[ym]||{}).hired||null);
+  const fcastData=months12.map((ym,i)=>i>=nDone?Math.round(avgApps):null);
+
+  destroy('c1');
+  charts['c1']=new Chart(G('c1'),{type:'bar',data:{labels:months12,datasets:[
+    {label:'実績',data:appData,backgroundColor:'#2563eb'},
+    {label:'予測',data:fcastData,backgroundColor:'#bfdbfe'},
+    {label:'昨年平均',data:months12.map(()=>Math.round(1356/12)),type:'line',borderColor:'#dc2626',borderDash:[4,4],pointRadius:0,borderWidth:1.5},
+  ]},options:{...co(),scales:{x:{ticks:{font:{size:11}}},y:{beginAtZero:true,ticks:{font:{size:11}}}}}});
+
+  destroy('c2');
+  charts['c2']=new Chart(G('c2'),{type:'bar',data:{labels:months12,datasets:[
+    {label:'実績',data:hireData,backgroundColor:'#16a34a'},
+    {label:'目標',data:months12.map(()=>Math.round(CFG.target/12)),type:'line',borderColor:'#dc2626',borderDash:[4,4],pointRadius:0,borderWidth:1.5},
+  ]},options:{...co(),scales:{x:{ticks:{font:{size:11}}},y:{beginAtZero:true,ticks:{font:{size:11}}}}}});
+
+  const c3data=months12.filter(ym=>(K.monthStat[ym]||{}).hired>0);
+  destroy('c3');
+  charts['c3']=new Chart(G('c3'),{type:'line',data:{labels:c3data,datasets:[
+    {label:'採用単価',data:c3data.map(ym=>{const s=K.monthStat[ym]||{};return s.hired>0?Math.round(s.cost/s.hired):null;}),borderColor:'#1e3a5f',tension:.3,pointRadius:4,pointBackgroundColor:'#1e3a5f'},
+    {label:'昨年実績',data:c3data.map(()=>CFG.hireUnitLY),borderColor:'#9ca3af',borderDash:[4,4],pointRadius:0,borderWidth:1.5},
+  ]},options:{...co()}});
+
+  const md=K.media||[];
+  const c4h=Math.max(md.length*42+60,180);
+  G('c4w').style.height=c4h+'px';
+  destroy('c4');
+  charts['c4']=new Chart(G('c4'),{type:'bar',data:{labels:md.map(m=>m.name),datasets:[
+    {label:'応募数',data:md.map(m=>m.apps),backgroundColor:'#2563eb'},
+    {label:'採用数',data:md.map(m=>m.hired),backgroundColor:'#16a34a'},
+  ]},options:{...co(),indexAxis:'y',scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11}}}}}});
+
+  const br=K.branches||[];
+  const c5h=Math.max(br.length*42+60,160);
+  G('c5w').style.height=c5h+'px';
+  destroy('c5');
+  charts['c5']=new Chart(G('c5'),{type:'bar',data:{labels:br.map(b=>b.name),datasets:[
+    {label:'目標',data:br.map(b=>b.target),backgroundColor:'#bfdbfe'},
+    {label:'入社数',data:br.map(b=>b.hired),backgroundColor:'#2563eb'},
+  ]},options:{...co(),indexAxis:'y',scales:{x:{ticks:{font:{size:11}}},y:{ticks:{font:{size:11}}}}}});
+
+  const ag=K.ageStat||{};
+  const agLabels=['10代','20代','30代','40代','50代','60代以上'];
+  const agKeys=[10,20,30,40,50,60];
+  const totalApp=agKeys.reduce((s,k)=>s+(ag[k]?.app||0),0)||1;
+  const totalHire=agKeys.reduce((s,k)=>s+(ag[k]?.hire||0),0)||1;
+  destroy('c6');
+  charts['c6']=new Chart(G('c6'),{type:'bar',data:{labels:agLabels,datasets:[
+    {label:'応募割合',data:agKeys.map(k=>Math.round((ag[k]?.app||0)/totalApp*100)),backgroundColor:'#bfdbfe'},
+    {label:'採用割合',data:agKeys.map(k=>Math.round((ag[k]?.hire||0)/totalHire*100)),backgroundColor:'#2563eb'},
+  ]},options:{...co(),scales:{x:{ticks:{font:{size:11}}},y:{beginAtZero:true,max:70,ticks:{font:{size:11},callback:v=>v+'%'}}}}});
+}
+
+// ═══════════════════════════════════════
+// SIMULATION
+// ═══════════════════════════════════════
+function calcSim(){
+  const vals=[1,2,3,4,5,6,7,8].map(i=>parseInt(G('s'+i).value)/100);
+  const conv=vals.reduce((p,v)=>p*v,1);
+  const needed=conv>0?Math.ceil(CFG.target/conv):99999;
+  const budget=Math.round(needed*(CFG.appUnitLY));
+  const K=STATE.kpiSummary;
+  const f=K.funnelData||[];
+  const curConv=(f[8]?.count||1)/(f[0]?.count||1);
+  const impr=curConv>0?Math.round((conv/curConv-1)*100):0;
+  G('sim-result').innerHTML=`
+    <div class="sim-card"><div class="sim-lbl">総合歩留まり率</div><div class="sim-val" style="color:var(--blue)">${(conv*100).toFixed(2)}%</div></div>
+    <div class="sim-card"><div class="sim-lbl">必要応募数</div><div class="sim-val neg">${fmt(needed)}名</div></div>
+    <div class="sim-card"><div class="sim-lbl">必要予算</div><div class="sim-val neg">¥${fmt(budget)}</div></div>
+    <div class="sim-card"><div class="sim-lbl">現状比（改善効果）</div><div class="sim-val ${impr>=0?'pos':'neg'}">${impr>=0?'+':''}${impr}%</div></div>`;
+}
+[1,2,3,4,5,6,7,8].forEach(i=>{
+  G('s'+i).addEventListener('input',function(){const v=Math.min(100,parseInt(this.value));G('v'+i).textContent=v+'%';calcSim();});
+});
+
+// ═══════════════════════════════════════
+// CHART TABS
+// ═══════════════════════════════════════
+[{id:'1',lbl:'応募推移'},{id:'2',lbl:'採用推移'},{id:'3',lbl:'採用単価'},{id:'4',lbl:'媒体別'},{id:'5',lbl:'拠点別'},{id:'6',lbl:'年代別'}].forEach(t=>{
+  const btn=document.createElement('button');
+  btn.className='tab'+(t.id==='1'?' active':'');
+  btn.textContent=t.lbl;
+  btn.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.cp').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    G('cp-'+t.id).classList.add('active');
+  };
+  G('chart-tabs').appendChild(btn);
+});
+
+// ═══════════════════════════════════════
+// REPORT
+// ═══════════════════════════════════════
+function openReport(){
+  buildReport();
+  G('report-modal').classList.add('open');
+}
+function closeReport(){ G('report-modal').classList.remove('open'); }
+
+function buildReport(){
+  const K = STATE.kpiSummary;
+  const TARGET = CFG.target;
+  const totalHired = K.totalHired||0;
+  const totalCost = Object.values(K.monthlyCostMap||{}).reduce((s,v)=>s+v,0)||K.thisMonthCost||0;
+  const achieveRate = pct(totalHired, TARGET);
+  const unitCost = totalHired>0?Math.round(totalCost/totalHired):CFG.hireUnitLY;
+  const nMonths = Object.keys(K.monthStat||{}).length||1;
+  const avgHire = totalHired/nMonths;
+  const forecastHire = Math.round(avgHire*12);
+
+  const today = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+  const f = K.funnelData||[];
+  const acceptRate = pct(f[7]?.count, f[6]?.count);
+  const md = (K.media||[]).slice(0,5);
+
+  const reportHTML = `
+<h1>採用活動月次報告書</h1>
+<p style="color:var(--text3);font-size:12px">報告日: ${today}｜対象期間: ${CFG.month}｜作成: 採用管理ダッシュボード自動生成</p>
+
+<h2>📊 今月のKPIサマリー</h2>
+<div class="report-kpi-grid">
+  <div class="report-kpi"><div class="report-kpi-lbl">入社数</div><div class="report-kpi-val">${K.thisMonthHired}名</div></div>
+  <div class="report-kpi"><div class="report-kpi-lbl">応募数</div><div class="report-kpi-val">${K.thisMonthApps}名</div></div>
+  <div class="report-kpi"><div class="report-kpi-lbl">採用コスト</div><div class="report-kpi-val">${fmtY(K.thisMonthCost)}</div></div>
+  <div class="report-kpi"><div class="report-kpi-lbl">採用単価</div><div class="report-kpi-val">${fmtY(K.thisMonthHireUnit)}</div></div>
+  <div class="report-kpi"><div class="report-kpi-lbl">応募単価</div><div class="report-kpi-val">${fmtY(K.thisMonthAppUnit)}</div></div>
+  <div class="report-kpi"><div class="report-kpi-lbl">内定者数</div><div class="report-kpi-val">${K.thisMonthOffers}名</div></div>
+</div>
+
+<h2>📈 累計進捗</h2>
+<p>今期の採用目標 <strong>${TARGET}名</strong> に対し、現在 <strong>${totalHired}名</strong> が入社済みです（進捗率 <strong>${achieveRate}%</strong>）。現在のペースで推移した場合、年間の着地予測は <strong>${forecastHire}名</strong> となります。${forecastHire < TARGET ? `目標に対し <strong>${TARGET-forecastHire}名不足</strong> の見込みのため、採用活動の強化が必要です。` : '目標達成ペースで推移しています。'}</p>
+
+<h2>🔽 採用ファネル状況</h2>
+<table class="report-tbl">
+  <tr><th style="text-align:left">フェーズ</th><th>件数</th><th>通過率</th><th>目標比</th></tr>
+  ${f.map((fi,i)=>`<tr><td>${fi.name}</td><td>${fmt(fi.count)}</td><td>${i===0?'—':pct(fi.count,f[i-1]?.count)+'%'}</td><td class="${pct(fi.count,fi.target)<80?'neg':''}">${pct(fi.count,fi.target)}%</td></tr>`).join('')}
+</table>
+${acceptRate<60?`<p style="color:var(--red)">⚠️ 内定承諾率が ${acceptRate}% と低水準です。オファー条件の見直しやクロージング強化をご検討ください。</p>`:''}
+
+<h2>📣 媒体別実績</h2>
+<table class="report-tbl">
+  <tr><th style="text-align:left">媒体</th><th>応募数</th><th>採用数</th><th>採用単価</th></tr>
+  ${md.map(m=>{const hu=m.hired>0?Math.round(m.cost/m.hired):0;return`<tr><td>${m.name}</td><td>${m.apps}</td><td>${m.hired}</td><td>${hu?fmtY(hu):'-'}</td></tr>`;}).join('')}
+</table>
+
+<h2>🏢 拠点別状況</h2>
+<table class="report-tbl">
+  <tr><th style="text-align:left">拠点</th><th>目標</th><th>入社数</th><th>充足率</th></tr>
+  ${(K.branches||[]).map(b=>`<tr><td>${b.name}</td><td>${b.target}</td><td>${b.hired}</td><td class="${pct(b.hired,b.target)<60?'neg':''}">${pct(b.hired,b.target)}%</td></tr>`).join('')}
+</table>
+
+<h2>💡 改善提言</h2>
+<p>${generateSuggestions(K, TARGET, totalHired, unitCost, acceptRate, forecastHire)}</p>
+<div style="margin-top:2rem;padding-top:1rem;border-top:.5px solid var(--border);font-size:11px;color:var(--text3)">本レポートは採用KPIダッシュボードにより自動生成されました。</div>
+`;
+  G('report-content').innerHTML = reportHTML;
+}
+
+function generateSuggestions(K, target, hired, unitCost, acceptRate, forecast){
+  const items = [];
+  if(forecast < target) items.push(`着地予測が目標を ${target-forecast}名下回っています。月間応募数の増加に向けた媒体予算の追加・見直しをご検討ください。`);
+  if(unitCost > 200000) items.push(`採用単価が ${fmtY(unitCost)} と高水準です。費用対効果の高い媒体への予算集中をお勧めします。`);
+  if(acceptRate < 70) items.push(`内定承諾率が ${acceptRate}% です。オファー提示後のフォローアップ強化や、条件交渉の対応改善が効果的です。`);
+  const f = K.funnelData||[];
+  const docRate = pct(f[1]?.count, f[0]?.count);
+  if(docRate < 30) items.push(`書類通過率が ${docRate}% と低めです。スクリーニング基準の見直しや、応募段階での情報充実化をご検討ください。`);
+  if(items.length === 0) items.push('現時点では主要KPIは良好な水準です。引き続き現在の採用活動を維持してください。');
+  return items.map((s,i)=>`${i+1}. ${s}`).join('<br>');
+}
+
+// ═══════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════
+function toggleSync(){
+  const p=G('sync-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+G('hd-date').textContent = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})+' 時点';
+G('ss-applicant').value = CFG.ssApplicant;
+G('ss-report').value    = CFG.ssReport;
+G('cfg-target').value   = CFG.target;
+G('cfg-month').value    = CFG.month;
+
+// 初回は自動読み込み
+loadAll();
+</script>
+</body>
+</html>
