@@ -428,48 +428,53 @@ function computeFromApp(){
   const bb         = APP_DATA.byBranch || {};
   const months     = getThisTermMonths();
 
+  const declinesMap = APP_DATA.offerDeclines || {};
+
   // ── 月別行（今期12ヶ月）
   const monthRows = months.map((ym,i)=>{
     const d = bm[ym] || {};
     return {
       ym,
-      label:      ML[i],
-      apps:       d.apps        || 0,
-      interviews: d.interviews  || 0,
-      male:       d.male        || 0,
-      female:     d.female      || 0,
-      ages:       d.ages        || {},
-      offers:     offersMap[ym] || 0,  // 内定日ベース
-      joins:      joinsMap[ym]  || 0,  // 入社日ベース
+      label:         ML[i],
+      apps:          d.apps        || 0,
+      interviews:    d.interviews  || 0,
+      male:          d.male        || 0,
+      female:        d.female      || 0,
+      ages:          d.ages        || {},
+      offers:        offersMap[ym] || 0,
+      offerDeclines: declinesMap[ym] || 0,
+      joins:         joinsMap[ym]  || 0,
     };
   });
 
   // ── 年間合計（今期分）
   const total = monthRows.reduce((acc,m)=>{
-    acc.apps       += m.apps;
-    acc.interviews += m.interviews;
-    acc.offers     += m.offers;
-    acc.joins      += m.joins;
-    acc.male       += m.male;
-    acc.female     += m.female;
+    acc.apps          += m.apps;
+    acc.interviews    += m.interviews;
+    acc.offers        += m.offers;
+    acc.offerDeclines += m.offerDeclines;
+    acc.joins         += m.joins;
+    acc.male          += m.male;
+    acc.female        += m.female;
     Object.entries(m.ages||{}).forEach(([ag,n])=>{
       acc.ages[ag] = (acc.ages[ag]||0) + n;
     });
     return acc;
-  }, {apps:0,interviews:0,offers:0,joins:0,male:0,female:0,ages:{}});
+  }, {apps:0,interviews:0,offers:0,offerDeclines:0,joins:0,male:0,female:0,ages:{}});
 
   // ── エリア別（GAS側で全期間集計済み → そのまま使用）
   const areas = {};
   Object.entries(ba).forEach(([area,a])=>{
     if((a.apps||0)>0||(a.joins||0)>0||(a.offers||0)>0){
       areas[area] = {
-        apps:       a.apps       || 0,
-        interviews: a.interviews || 0,
-        offers:     a.offers     || 0,
-        joins:      a.joins      || 0,
-        male:       a.male       || 0,
-        female:     a.female     || 0,
-        ages:       a.ages       || {},
+        apps:          a.apps          || 0,
+        interviews:    a.interviews    || 0,
+        offers:        a.offers        || 0,
+        offerDeclines: a.offerDeclines || 0,
+        joins:         a.joins         || 0,
+        male:          a.male          || 0,
+        female:        a.female        || 0,
+        ages:          a.ages          || {},
       };
     }
   });
@@ -479,13 +484,14 @@ function computeFromApp(){
   Object.entries(bb).forEach(([branch,b])=>{
     if((b.apps||0)>0||(b.joins||0)>0){
       branches[branch] = {
-        area:       b.area       || '',
-        apps:       b.apps       || 0,
-        interviews: b.interviews || 0,
-        offers:     b.offers     || 0,
-        joins:      b.joins      || 0,
-        male:       b.male       || 0,
-        female:     b.female     || 0,
+        area:          b.area          || '',
+        apps:          b.apps          || 0,
+        interviews:    b.interviews    || 0,
+        offers:        b.offers        || 0,
+        offerDeclines: b.offerDeclines || 0,
+        joins:         b.joins         || 0,
+        male:          b.male          || 0,
+        female:        b.female        || 0,
       };
     }
   });
@@ -547,15 +553,17 @@ function renderAll(){
   G('sim-t').textContent = CFG.target;
 
   // ── KPI
+  const totalOfferDeclines = ap ? ap.total.offerDeclines : 0;
+
   G('kpi-g').innerHTML=[
-    {l:'応募数（累計）',    v:fmt(totalApps)+'名',  s:'今期累計',                          c:''},
+    {l:'応募数（累計）',    v:fmt(totalApps)+'名',       s:'今期累計',                                    c:''},
     {l:'面接実施数',        v:fmt(totalInterviews)+'名', s:'面接率 '+pct(totalInterviews,totalApps)+'%', c:''},
-    {l:'内定者数',          v:fmt(totalOffers)+'名', s:'内定率 '+pct(totalOffers,totalApps)+'%', c:pct(totalOffers,totalApps)<5&&totalApps>0?'warn':''},
-    {l:'入社数（累計）',    v:totalJoins+'名',       s:'目標 '+CFG.target+'名',             c:ach<40?'warn':'success'},
-    {l:'達成率',            v:ach+'%',               s:'月平均 '+Math.round(avgJoins*10)/10+'名/月', c:ach<50?'warn':'success'},
-    {l:'累計採用コスト',    v:fmtYK(totalCost),      s:totalCost>0?'実績報告シートより':'実績報告未取得', c:''},
-    {l:'採用単価',          v:fmtY(hireUnit),        s:'昨年 '+fmtY(CFG.hireUnitLY),       c:hireUnit>200000?'danger':''},
-    {l:'年間着地予測',      v:fcastJoins+'名',       s:'現ペース換算',                      c:fcastJoins<CFG.target?'danger':'success'},
+    {l:'内定者数',          v:fmt(totalOffers)+'名',     s:'辞退除く／辞退 '+totalOfferDeclines+'名',    c:pct(totalOffers,totalApps)<5&&totalApps>0?'warn':''},
+    {l:'内定辞退数',        v:fmt(totalOfferDeclines)+'名', s:'承諾率 '+pct(totalOffers,(totalOffers+totalOfferDeclines)||1)+'%', c:totalOfferDeclines>0?'warn':''},
+    {l:'入社数（累計）',    v:totalJoins+'名',           s:'目標 '+CFG.target+'名',                      c:ach<40?'warn':'success'},
+    {l:'達成率',            v:ach+'%',                   s:'月平均 '+Math.round(avgJoins*10)/10+'名/月', c:ach<50?'warn':'success'},
+    {l:'採用単価',          v:fmtY(hireUnit),            s:'昨年 '+fmtY(CFG.hireUnitLY),                c:hireUnit>200000?'danger':''},
+    {l:'年間着地予測',      v:fcastJoins+'名',           s:'現ペース換算',                               c:fcastJoins<CFG.target?'danger':'success'},
   ].map(k=>`<div class="kpi ${k.c}"><div class="kl">${k.l}</div><div class="kv">${k.v}</div><div class="ks">${k.s}</div></div>`).join('');
 
   // ── アラート
@@ -607,8 +615,8 @@ function renderAll(){
 
   // ── 月別テーブル
   let cumT=0,cumJ=0;
-  const monthRows = ap ? ap.monthRows : MY.map((ym,i)=>({ym,label:ML[i],apps:0,interviews:0,offers:0,joins:0}));
-  let rows='<tr><th>月</th><th>応募数</th><th>面接数</th><th>内定数</th><th>入社数</th><th>目標</th><th>差分</th><th>累計入社</th><th>採用コスト</th><th>採用単価</th></tr>';
+  const monthRows = ap ? ap.monthRows : MY.map((ym,i)=>({ym,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
+  let rows='<tr><th>月</th><th>応募数</th><th>面接数</th><th>内定数</th><th>内定辞退</th><th>入社数</th><th>目標</th><th>差分</th><th>累計入社</th><th>採用コスト</th><th>採用単価</th></tr>';
   monthRows.forEach((m,i)=>{
     const tgt=Math.round(CFG.target/12);
     cumT+=tgt; cumJ+=m.joins;
@@ -616,9 +624,9 @@ function renderAll(){
     const mc=rp?rp.monthCosts[m.ym]:null;
     const hpu=mc&&mc.hired>0?Math.round(mc.cost/mc.hired):0;
     const isCur=m.apps>0&&(i===monthRows.length-1||!monthRows[i+1]?.apps);
-    rows+=`<tr${i===11?' class="total"':isCur?' class="hi"':''}><td>${m.label}</td><td>${m.apps||'-'}</td><td>${m.interviews||'-'}</td><td>${m.offers||'-'}</td><td>${m.joins||'-'}</td><td>${tgt}</td><td class="${diff<0?'neg':diff>0?'pos':''}">${m.joins?(sgn(diff)+diff):'-'}</td><td>${cumJ||'-'}</td><td>${mc&&mc.cost?fmtYK(mc.cost):'-'}</td><td>${hpu?fmtY(hpu):'-'}</td></tr>`;
+    rows+=`<tr${i===11?' class="total"':isCur?' class="hi"':''}><td>${m.label}</td><td>${m.apps||'-'}</td><td>${m.interviews||'-'}</td><td>${m.offers||'-'}</td><td class="${m.offerDeclines>0?'neg':''}">${m.offerDeclines||'-'}</td><td>${m.joins||'-'}</td><td>${tgt}</td><td class="${diff<0?'neg':diff>0?'pos':''}">${m.joins?(sgn(diff)+diff):'-'}</td><td>${cumJ||'-'}</td><td>${mc&&mc.cost?fmtYK(mc.cost):'-'}</td><td>${hpu?fmtY(hpu):'-'}</td></tr>`;
   });
-  rows+=`<tr class="total"><td>合計</td><td>${totalApps||'-'}</td><td>${totalInterviews||'-'}</td><td>${totalOffers||'-'}</td><td>${totalJoins||'-'}</td><td>${CFG.target}</td><td class="${totalJoins-CFG.target<0?'neg':'pos'}">${sgn(totalJoins-CFG.target)}${totalJoins-CFG.target}</td><td>—</td><td>${fmtYK(totalCost)}</td><td>${fmtY(hireUnit)}</td></tr>`;
+  rows+=`<tr class="total"><td>合計</td><td>${totalApps||'-'}</td><td>${totalInterviews||'-'}</td><td>${totalOffers||'-'}</td><td class="${totalOfferDeclines>0?'neg':''}">${totalOfferDeclines||'-'}</td><td>${totalJoins||'-'}</td><td>${CFG.target}</td><td class="${totalJoins-CFG.target<0?'neg':'pos'}">${sgn(totalJoins-CFG.target)}${totalJoins-CFG.target}</td><td>—</td><td>${fmtYK(totalCost)}</td><td>${fmtY(hireUnit)}</td></tr>`;
   G('m-tbl').innerHTML=rows;
 
   // ── エリア別・拠点別
@@ -637,7 +645,9 @@ function renderAll(){
         <div class="bk-item"><div class="bk-il">応募数</div><div class="bk-iv">${fmt(b.apps)}名</div></div>
         <div class="bk-item"><div class="bk-il">面接数</div><div class="bk-iv">${fmt(b.interviews)}名</div></div>
         <div class="bk-item"><div class="bk-il">内定数</div><div class="bk-iv">${fmt(b.offers)}名</div></div>
+        <div class="bk-item"><div class="bk-il">内定辞退</div><div class="bk-iv ${b.offerDeclines>0?'neg':''}">${b.offerDeclines||0}名</div></div>
         <div class="bk-item"><div class="bk-il">入社数</div><div class="bk-iv ${b.joins>0?'pos':''}">${b.joins}名</div></div>
+        <div class="bk-item"><div class="bk-il">承諾率</div><div class="bk-iv">${pct(b.joins,(b.offers+b.offerDeclines)||1)}%</div></div>
       </div>
       <div style="font-size:10px;color:var(--t3);margin-bottom:4px">面接率 ${intR}% ／ 採用率 ${convR}%</div>
       <div class="bk-bar"><div class="bk-bf" style="width:${Math.min(convR*5,100)}%;background:${bc}"></div></div>
@@ -655,9 +665,9 @@ function renderAll(){
     </table>
     <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px">🏢 拠点別詳細</div>
     <table class="tbl">
-      <tr><th style="text-align:left">拠点</th><th>エリア</th><th>応募数</th><th>面接数</th><th>内定数</th><th>入社数</th><th>面接率</th><th>採用率</th></tr>
-      ${branches.map(([name,b])=>`<tr><td>${name}</td><td style="text-align:left">${b.area||''}</td><td>${fmt(b.apps)}</td><td>${fmt(b.interviews)}</td><td>${fmt(b.offers)}</td><td>${b.joins}</td><td>${pct(b.interviews,b.apps||1)}%</td><td>${pct(b.joins,b.apps||1)}%</td></tr>`).join('')}
-      ${branches.length>1?`<tr class="total"><td>合計</td><td>—</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.apps||0),0))}</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.interviews||0),0))}</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.offers||0),0))}</td><td>${branches.reduce((s,[,b])=>s+(b.joins||0),0)}</td><td>${pct(totalInterviews,totalApps||1)}%</td><td>${pct(totalJoins,totalApps||1)}%</td></tr>`:''}
+      <tr><th style="text-align:left">拠点</th><th>エリア</th><th>応募数</th><th>面接数</th><th>内定数</th><th>内定辞退</th><th>入社数</th><th>承諾率</th><th>採用率</th></tr>
+      ${branches.map(([name,b])=>`<tr><td>${name}</td><td style="text-align:left">${b.area||''}</td><td>${fmt(b.apps)}</td><td>${fmt(b.interviews)}</td><td>${fmt(b.offers)}</td><td class="${b.offerDeclines>0?'neg':''}">${b.offerDeclines||0}</td><td>${b.joins}</td><td>${pct(b.joins,(b.offers+b.offerDeclines)||1)}%</td><td>${pct(b.joins,b.apps||1)}%</td></tr>`).join('')}
+      ${branches.length>1?`<tr class="total"><td>合計</td><td>—</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.apps||0),0))}</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.interviews||0),0))}</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.offers||0),0))}</td><td class="neg">${branches.reduce((s,[,b])=>s+(b.offerDeclines||0),0)||'-'}</td><td>${branches.reduce((s,[,b])=>s+(b.joins||0),0)}</td><td>${pct(totalJoins,(totalOffers+totalOfferDeclines)||1)}%</td><td>${pct(totalJoins,totalApps||1)}%</td></tr>`:''}
     </table>`;
 
   // ── 性別
