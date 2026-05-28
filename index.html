@@ -21,7 +21,14 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
 
-/* GAS設定パネル */
+/* 月タブ切り替え */
+.month-tab-bar{display:flex;align-items:center;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;background:var(--sur);border:.5px solid var(--b2);border-radius:var(--r);padding:.6rem 1rem}
+.month-tab-lbl{font-size:11px;font-weight:700;color:var(--t3);margin-right:4px;white-space:nowrap}
+.mtab{font-size:11px;padding:4px 12px;border-radius:20px;border:.5px solid var(--b2);cursor:pointer;color:var(--t2);background:transparent;font-family:inherit;white-space:nowrap}
+.mtab.active{background:var(--acc);color:#fff;border-color:var(--acc)}
+.mtab:hover:not(.active){background:var(--s2)}
+.mtab.has-data{font-weight:700}
+.view-label{background:var(--al);color:#78350f;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
 .gas-panel{background:var(--bl);border:1px solid #93c5fd;border-radius:var(--r);padding:1rem 1.25rem;margin-bottom:1.25rem;display:none}
 .gas-panel.open{display:block}
 .gas-ttl{font-size:12px;font-weight:700;color:#1e40af;margin-bottom:.75rem}
@@ -185,6 +192,17 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 <!-- アラート -->
 <div class="sec"><div class="sec-ttl">⚠️ アラート</div><div id="alerts"></div></div>
 
+<!-- 月タブ切り替え -->
+<div class="month-tab-bar" id="month-tab-bar">
+  <span class="month-tab-lbl">📅 表示月：</span>
+  <button class="mtab active" data-ym="all" onclick="selectMonth('all')">年間累計</button>
+  <span id="month-tabs-dynamic"></span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+  <span class="view-label" id="view-label">📊 年間累計</span>
+  <span style="font-size:11px;color:var(--t3)">← 月タブで切り替え可能</span>
+</div>
+
 <!-- ファネル -->
 <div class="sec">
   <div class="sec-ttl">🔽 採用ファネル（今期 応募月ベース）</div>
@@ -308,9 +326,10 @@ const MEDIA_NAMES = ['AirWORK/Indeed','ジョブメドレー','介護ジョブ',
 // STATE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
 let CFG = { gasApplicant:'', gasReport:'', target:94, startYM:'2026/04', appUnitLY:12773, hireUnitLY:199080 };
-let APP_DATA = null;  // 応募者管理GASレスポンス
-let RPT_DATA = null;  // 実績報告GASレスポンス
+let APP_DATA = null;
+let RPT_DATA = null;
 let charts = {};
+let SELECTED_YM = 'all'; // 選択中の月（'all' = 年間累計）
 
 const G   = id => document.getElementById(id);
 const fmt  = n => Math.round(n).toLocaleString('ja-JP');
@@ -405,8 +424,149 @@ function setBadge(msg,cls){
 function addBadgeErr(msg){ console.warn(msg); }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-// COMPUTE: 応募者管理データを今期分に絞る
+// 月タブ切り替え
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function selectMonth(ym){
+  SELECTED_YM = ym;
+  // タブのactive切り替え
+  document.querySelectorAll('.mtab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.ym === ym);
+  });
+  // ラベル更新
+  const idx = MY.indexOf(ym);
+  const lbl = ym === 'all' ? '📊 年間累計' : '📅 ' + ML[idx] + '（' + ym + '）';
+  G('view-label').textContent = lbl;
+  // 各セクション再描画
+  renderMonthly();
+}
+
+function buildMonthTabs(){
+  if(!APP_DATA) return;
+  const bm = APP_DATA.byMonth || {};
+  const dyn = G('month-tabs-dynamic');
+  dyn.innerHTML = MY.map((ym,i)=>{
+    const hasData = bm[ym] && bm[ym].apps > 0;
+    return `<button class="mtab${hasData?' has-data':''}" data-ym="${ym}" onclick="selectMonth('${ym}')">${ML[i]}</button>`;
+  }).join('');
+}
+
+function renderMonthly(){
+  const ym = SELECTED_YM;
+  const isAll = ym === 'all';
+  const ap = computeFromApp();
+  const rp = computeFromRpt();
+
+  // ── ファネルデータ取得
+  let apps=0, interviews=0, offers=0, offerDeclines=0, joins=0;
+  if(isAll && ap){
+    ({apps,interviews,offers,offerDeclines,joins} = ap.total);
+  } else if(!isAll && APP_DATA){
+    const bm = APP_DATA.byMonth[ym] || {};
+    apps       = bm.apps       || 0;
+    interviews = bm.interviews || 0;
+    offers     = (APP_DATA.offers||{})[ym]        || 0;
+    offerDeclines = (APP_DATA.offerDeclines||{})[ym] || 0;
+    joins      = (APP_DATA.joins||{})[ym]         || 0;
+  }
+
+  // ファネル描画
+  const fnData=[
+    {name:'応募',     count:apps,          color:'#2563eb'},
+    {name:'面接実施', count:interviews,    color:'#f59e0b'},
+    {name:'内定',     count:offers,        color:'#8b5cf6'},
+    {name:'内定辞退', count:offerDeclines, color:'#ef4444'},
+    {name:'入社',     count:joins,         color:'#16a34a'},
+  ];
+  const maxC = apps || 1;
+  G('fn-body').innerHTML = fnData.map((fi,i)=>{
+    const prev = i===0?apps:fnData[i-1].count;
+    const r = i===0?100:pct(fi.count, prev);
+    const bp = pct(fi.count, maxC);
+    return `<div class="fn-row">
+      <span style="font-weight:700;font-size:11px">${fi.name}</span>
+      <div><div class="bw"><div class="bf" style="width:${bp}%;background:${fi.color}"></div></div></div>
+      <span class="cr">${fmt(fi.count)}</span>
+      <span class="cr">${i===0?'—':r+'%'}</span>
+    </div>`;
+  }).join('');
+
+  // ── 拠点別KPIカード
+  let branchEntries = [];
+  if(isAll && ap){
+    branchEntries = Object.entries(ap.branches).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0));
+  } else if(!isAll && APP_DATA?.monthlyBranch?.[ym]){
+    branchEntries = Object.entries(APP_DATA.monthlyBranch[ym]).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0));
+  }
+
+  G('bk-g').innerHTML = branchEntries.length ? branchEntries.map(([name,b])=>{
+    const convR = pct(b.joins, b.apps||1);
+    const intR  = pct(b.interviews, b.apps||1);
+    const bc    = b.joins>0?'#16a34a':b.offers>0?'#d97706':'#dc2626';
+    const areaLabel = b.area || (ap?.branches[name]?.area) || '';
+    return `<div class="bk">
+      <div class="bk-name"><span>🏢 ${name}</span><span class="bdg ${convR>=10?'bg-g':convR>=3?'bg-a':'bg-r'}">${convR}%</span></div>
+      <div style="font-size:9px;color:var(--t3);margin-bottom:6px">${areaLabel}</div>
+      <div class="bk-kpi">
+        <div class="bk-item"><div class="bk-il">応募数</div><div class="bk-iv">${fmt(b.apps)}名</div></div>
+        <div class="bk-item"><div class="bk-il">面接数</div><div class="bk-iv">${fmt(b.interviews)}名</div></div>
+        <div class="bk-item"><div class="bk-il">内定数</div><div class="bk-iv">${fmt(b.offers)}名</div></div>
+        <div class="bk-item"><div class="bk-il">内定辞退</div><div class="bk-iv ${b.offerDeclines>0?'neg':''}">${b.offerDeclines||0}名</div></div>
+        <div class="bk-item"><div class="bk-il">入社数</div><div class="bk-iv ${b.joins>0?'pos':''}">${b.joins}名</div></div>
+        <div class="bk-item"><div class="bk-il">承諾率</div><div class="bk-iv">${pct(b.joins,(b.offers+(b.offerDeclines||0))||1)}%</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-bottom:4px">面接率 ${intR}% ／ 採用率 ${convR}%</div>
+      <div class="bk-bar"><div class="bk-bf" style="width:${Math.min(convR*5,100)}%;background:${bc}"></div></div>
+      ${b.male||b.female ? renderGenderBar(b.male||0, b.female||0) : ''}
+    </div>`;
+  }).join('') : `<div style="color:var(--t3);font-size:13px;padding:.5rem">${isAll?'データを取得してください':'この月のデータはありません'}</div>`;
+
+  // ── 拠点別詳細テーブル
+  let areaEntries = [];
+  if(isAll && ap){
+    areaEntries = Object.entries(ap.areas).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0));
+  } else if(!isAll && APP_DATA?.monthlyArea?.[ym]){
+    areaEntries = Object.entries(APP_DATA.monthlyArea[ym]).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0));
+  }
+
+  const totalBranch = branchEntries.reduce((acc,[,b])=>{
+    acc.apps+=(b.apps||0); acc.interviews+=(b.interviews||0);
+    acc.offers+=(b.offers||0); acc.offerDeclines+=(b.offerDeclines||0);
+    acc.joins+=(b.joins||0); return acc;
+  },{apps:0,interviews:0,offers:0,offerDeclines:0,joins:0});
+
+  G('br-tbl').innerHTML=`
+    <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px">📍 エリア別サマリー</div>
+    <table class="tbl" style="margin-bottom:1.5rem">
+      <tr><th style="text-align:left">エリア</th><th>応募数</th><th>面接数</th><th>内定数</th><th>内定辞退</th><th>入社数</th><th>面接率</th><th>採用率</th></tr>
+      ${areaEntries.map(([name,a])=>`<tr><td>${name}</td><td>${fmt(a.apps)}</td><td>${fmt(a.interviews)}</td><td>${a.offers||0}</td><td class="${(a.offerDeclines||0)>0?'neg':''}">${a.offerDeclines||0}</td><td>${a.joins}</td><td>${pct(a.interviews,a.apps||1)}%</td><td>${pct(a.joins,a.apps||1)}%</td></tr>`).join('')}
+    </table>
+    <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px">🏢 拠点別詳細</div>
+    <table class="tbl">
+      <tr><th style="text-align:left">拠点</th><th>エリア</th><th>応募数</th><th>面接数</th><th>内定数</th><th>内定辞退</th><th>入社数</th><th>承諾率</th><th>採用率</th></tr>
+      ${branchEntries.map(([name,b])=>{
+        const areaLabel = b.area || (ap?.branches[name]?.area) || '';
+        return`<tr><td>${name}</td><td style="text-align:left">${areaLabel}</td><td>${fmt(b.apps)}</td><td>${fmt(b.interviews)}</td><td>${b.offers||0}</td><td class="${(b.offerDeclines||0)>0?'neg':''}">${b.offerDeclines||0}</td><td>${b.joins}</td><td>${pct(b.joins,(b.offers+(b.offerDeclines||0))||1)}%</td><td>${pct(b.joins,b.apps||1)}%</td></tr>`;
+      }).join('')}
+      ${branchEntries.length>1?`<tr class="total"><td>合計</td><td>—</td><td>${fmt(totalBranch.apps)}</td><td>${fmt(totalBranch.interviews)}</td><td>${totalBranch.offers}</td><td class="${totalBranch.offerDeclines>0?'neg':''}">${totalBranch.offerDeclines}</td><td>${totalBranch.joins}</td><td>${pct(totalBranch.joins,(totalBranch.offers+totalBranch.offerDeclines)||1)}%</td><td>${pct(totalBranch.joins,totalBranch.apps||1)}%</td></tr>`:''}
+    </table>`;
+
+  // ── 採用コスト（月別は実績報告シートから）
+  const mds = rp ? Object.entries(rp.media||{}).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
+  const monthCost = isAll ? (rp?.totalCost||0) : (rp?.monthCosts?.[ym]?.cost||0);
+  const monthHired = isAll ? (computeFromApp()?.total?.joins||0) : ((APP_DATA?.joins||{})[ym]||0);
+  const monthHireUnit = monthHired>0&&monthCost>0 ? Math.round(monthCost/monthHired) : 0;
+
+  G('cost-card').innerHTML=`
+    <div class="ir"><span class="ir-k">${isAll?'累計':'当月'}採用コスト</span><span class="ir-v neg">${fmtYK(monthCost)}</span></div>
+    <div class="ir"><span class="ir-k">採用単価</span><span class="ir-v ${monthHireUnit>200000?'neg':''}">${monthHireUnit?fmtY(monthHireUnit):'-'}</span></div>
+    ${isAll?`<div class="ir"><span class="ir-k">応募単価</span><span class="ir-v">${fmtY(rp?.appUnit||CFG.appUnitLY)}</span></div>`:''}`;
+
+  G('md-tbl').innerHTML=`<table class="tbl">
+    <tr><th style="text-align:left">媒体</th><th>採用コスト</th><th>割合</th></tr>
+    ${mds.map(([n,m])=>`<tr><td>${n}</td><td>${fmtYK(m.cost)}</td><td>${pct(m.cost,rp?.totalCost||1)}%</td></tr>`).join('')}
+    ${mds.length>1?`<tr class="total"><td>合計</td><td>${fmtYK(mds.reduce((s,[,m])=>s+m.cost,0))}</td><td>100%</td></tr>`:''}
+  </table>`;
+}
 function getThisTermMonths(){
   // MY（今期12ヶ月）に含まれる月のみ
   return MY;
@@ -583,21 +743,6 @@ function renderAll(){
   }
   G('alerts').innerHTML=als.map(a=>`<div class="alt ${a.c}"><span>${a.c==='danger'?'⚠️':a.c==='warn'?'🔶':'✅'}</span><span>${a.m}</span></div>`).join('');
 
-  // ── ファネル（応募者管理から実数で計算）
-  const fnData=[
-    {name:'応募',    count:totalApps,       base:totalApps},
-    {name:'面接実施',count:totalInterviews, base:totalApps},
-    {name:'内定',    count:totalOffers,     base:totalApps},
-    {name:'入社',    count:totalJoins,      base:totalApps},
-  ];
-  const maxC=fnData[0].count||1;
-  G('fn-body').innerHTML=fnData.map((fi,i)=>{
-    const r=i===0?100:pct(fi.count,fnData[i-1].count);
-    const bp=pct(fi.count,maxC);
-    const bc=i===0?'#2563eb':i===1?'#f59e0b':i===2?'#8b5cf6':'#16a34a';
-    return `<div class="fn-row"><span style="font-weight:700;font-size:11px">${fi.name}</span><div><div class="bw"><div class="bf" style="width:${bp}%;background:${bc}"></div></div></div><span class="cr">${fmt(fi.count)}</span><span class="cr">${i===0?'—':r+'%'}</span></div>`;
-  }).join('');
-
   // ── 着地予測
   G('fc-card').innerHTML=`
     <div class="ir"><span class="ir-k">年間着地予測（入社）</span><span class="ir-v ${fcastJoins<CFG.target?'neg':'pos'}">${fcastJoins}名</span></div>
@@ -617,63 +762,27 @@ function renderAll(){
     <div class="ir"><span class="ir-k">月間必要予算</span><span class="ir-v">${mLeft>0?fmtYK(nBgt/mLeft):'-'}/月</span></div>`;
 
   // ── 月別テーブル
+  const monthRows2 = ap ? ap.monthRows : MY.map((ym,i)=>({ym,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
   let cumT=0,cumJ=0;
-  const monthRows = ap ? ap.monthRows : MY.map((ym,i)=>({ym,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
   let rows='<tr><th>月</th><th>応募数</th><th>面接数</th><th>内定数</th><th>内定辞退</th><th>入社数</th><th>目標</th><th>差分</th><th>累計入社</th><th>採用コスト</th><th>採用単価</th></tr>';
-  monthRows.forEach((m,i)=>{
+  monthRows2.forEach((mo,i)=>{
     const tgt=Math.round(CFG.target/12);
-    cumT+=tgt; cumJ+=m.joins;
-    const diff=m.joins-tgt;
-    const mc=rp?rp.monthCosts[m.ym]:null;
+    cumT+=tgt; cumJ+=mo.joins;
+    const diff=mo.joins-tgt;
+    const mc=rp?rp.monthCosts[mo.ym]:null;
     const hpu=mc&&mc.hired>0?Math.round(mc.cost/mc.hired):0;
-    const isCur=m.apps>0&&(i===monthRows.length-1||!monthRows[i+1]?.apps);
-    rows+=`<tr${i===11?' class="total"':isCur?' class="hi"':''}><td>${m.label}</td><td>${m.apps||'-'}</td><td>${m.interviews||'-'}</td><td>${m.offers||'-'}</td><td class="${m.offerDeclines>0?'neg':''}">${m.offerDeclines||'-'}</td><td>${m.joins||'-'}</td><td>${tgt}</td><td class="${diff<0?'neg':diff>0?'pos':''}">${m.joins?(sgn(diff)+diff):'-'}</td><td>${cumJ||'-'}</td><td>${mc&&mc.cost?fmtYK(mc.cost):'-'}</td><td>${hpu?fmtY(hpu):'-'}</td></tr>`;
+    const isCur=mo.apps>0&&(i===monthRows2.length-1||!monthRows2[i+1]?.apps);
+    rows+=`<tr${i===11?' class="total"':isCur?' class="hi"':''}><td>${mo.label}</td><td>${mo.apps||'-'}</td><td>${mo.interviews||'-'}</td><td>${mo.offers||'-'}</td><td class="${mo.offerDeclines>0?'neg':''}">${mo.offerDeclines||'-'}</td><td>${mo.joins||'-'}</td><td>${tgt}</td><td class="${diff<0?'neg':diff>0?'pos':''}">${mo.joins?(sgn(diff)+diff):'-'}</td><td>${cumJ||'-'}</td><td>${mc&&mc.cost?fmtYK(mc.cost):'-'}</td><td>${hpu?fmtY(hpu):'-'}</td></tr>`;
   });
   rows+=`<tr class="total"><td>合計</td><td>${totalApps||'-'}</td><td>${totalInterviews||'-'}</td><td>${totalOffers||'-'}</td><td class="${totalOfferDeclines>0?'neg':''}">${totalOfferDeclines||'-'}</td><td>${totalJoins||'-'}</td><td>${CFG.target}</td><td class="${totalJoins-CFG.target<0?'neg':'pos'}">${sgn(totalJoins-CFG.target)}${totalJoins-CFG.target}</td><td>—</td><td>${fmtYK(totalCost)}</td><td>${fmtY(hireUnit)}</td></tr>`;
   G('m-tbl').innerHTML=rows;
 
-  // ── エリア別・拠点別
-  const areas    = ap ? Object.entries(ap.areas).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)) : [];
-  const branches = ap ? Object.entries(ap.branches).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)) : [];
-
-  // 拠点別KPIカード（byBranch）
-  G('bk-g').innerHTML = branches.length ? branches.map(([name,b])=>{
-    const convR=pct(b.joins,b.apps||1);
-    const intR=pct(b.interviews,b.apps||1);
-    const bc = b.joins>0?'#16a34a':b.offers>0?'#d97706':'#dc2626';
-    return `<div class="bk">
-      <div class="bk-name"><span>🏢 ${name}</span><span class="bdg ${convR>=10?'bg-g':convR>=3?'bg-a':'bg-r'}">${convR}%</span></div>
-      <div style="font-size:9px;color:var(--t3);margin-bottom:6px">${b.area||''}</div>
-      <div class="bk-kpi">
-        <div class="bk-item"><div class="bk-il">応募数</div><div class="bk-iv">${fmt(b.apps)}名</div></div>
-        <div class="bk-item"><div class="bk-il">面接数</div><div class="bk-iv">${fmt(b.interviews)}名</div></div>
-        <div class="bk-item"><div class="bk-il">内定数</div><div class="bk-iv">${fmt(b.offers)}名</div></div>
-        <div class="bk-item"><div class="bk-il">内定辞退</div><div class="bk-iv ${b.offerDeclines>0?'neg':''}">${b.offerDeclines||0}名</div></div>
-        <div class="bk-item"><div class="bk-il">入社数</div><div class="bk-iv ${b.joins>0?'pos':''}">${b.joins}名</div></div>
-        <div class="bk-item"><div class="bk-il">承諾率</div><div class="bk-iv">${pct(b.joins,(b.offers+b.offerDeclines)||1)}%</div></div>
-      </div>
-      <div style="font-size:10px;color:var(--t3);margin-bottom:4px">面接率 ${intR}% ／ 採用率 ${convR}%</div>
-      <div class="bk-bar"><div class="bk-bf" style="width:${Math.min(convR*5,100)}%;background:${bc}"></div></div>
-      ${renderGenderBar(b.male,b.female)}
-    </div>`;
-  }).join('') : '<div style="color:var(--t3);font-size:13px;padding:.5rem">「🔄 今すぐ更新」でデータを取得してください</div>';
-
-  // 拠点別詳細テーブル + エリア別サマリー
-  G('br-tbl').innerHTML=`
-    <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px">📍 エリア別サマリー</div>
-    <table class="tbl" style="margin-bottom:1.5rem">
-      <tr><th style="text-align:left">エリア</th><th>応募数</th><th>面接数</th><th>内定数</th><th>入社数</th><th>面接率</th><th>採用率</th></tr>
-      ${areas.map(([name,a])=>`<tr><td>${name}</td><td>${fmt(a.apps)}</td><td>${fmt(a.interviews)}</td><td>${fmt(a.offers)}</td><td>${a.joins}</td><td>${pct(a.interviews,a.apps||1)}%</td><td>${pct(a.joins,a.apps||1)}%</td></tr>`).join('')}
-      ${areas.length>1?`<tr class="total"><td>合計</td><td>${fmt(areas.reduce((s,[,a])=>s+(a.apps||0),0))}</td><td>${fmt(areas.reduce((s,[,a])=>s+(a.interviews||0),0))}</td><td>${fmt(areas.reduce((s,[,a])=>s+(a.offers||0),0))}</td><td>${areas.reduce((s,[,a])=>s+(a.joins||0),0)}</td><td>${pct(totalInterviews,totalApps||1)}%</td><td>${pct(totalJoins,totalApps||1)}%</td></tr>`:''}
-    </table>
-    <div style="font-size:11px;font-weight:700;color:var(--t2);margin-bottom:8px">🏢 拠点別詳細</div>
-    <table class="tbl">
-      <tr><th style="text-align:left">拠点</th><th>エリア</th><th>応募数</th><th>面接数</th><th>内定数</th><th>内定辞退</th><th>入社数</th><th>承諾率</th><th>採用率</th></tr>
-      ${branches.map(([name,b])=>`<tr><td>${name}</td><td style="text-align:left">${b.area||''}</td><td>${fmt(b.apps)}</td><td>${fmt(b.interviews)}</td><td>${fmt(b.offers)}</td><td class="${b.offerDeclines>0?'neg':''}">${b.offerDeclines||0}</td><td>${b.joins}</td><td>${pct(b.joins,(b.offers+b.offerDeclines)||1)}%</td><td>${pct(b.joins,b.apps||1)}%</td></tr>`).join('')}
-      ${branches.length>1?`<tr class="total"><td>合計</td><td>—</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.apps||0),0))}</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.interviews||0),0))}</td><td>${fmt(branches.reduce((s,[,b])=>s+(b.offers||0),0))}</td><td class="neg">${branches.reduce((s,[,b])=>s+(b.offerDeclines||0),0)||'-'}</td><td>${branches.reduce((s,[,b])=>s+(b.joins||0),0)}</td><td>${pct(totalJoins,(totalOffers+totalOfferDeclines)||1)}%</td><td>${pct(totalJoins,totalApps||1)}%</td></tr>`:''}
-    </table>`;
+  // ── ファネル・拠点・コストは月タブと共通のrenderMonthly()で描画
+  buildMonthTabs();
+  renderMonthly();
 
   // ── 性別
+  const areas = ap ? Object.entries(ap.areas).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)) : [];
   const m=ap?ap.total.male:0, f=ap?ap.total.female:0, tot=m+f||1;
   G('gender-card').innerHTML=`
     <div class="ir"><span class="ir-k">男性</span><span class="ir-v" style="color:#3b82f6">${m}名（${pct(m,tot)}%）</span></div>
@@ -695,22 +804,10 @@ function renderAll(){
       ${agKeys.map((k,i)=>ages[k]?`<tr><td>${agL[i]}</td><td>${ages[k]}</td><td>${pct(ages[k],totAge)}%</td><td style="text-align:left"><div style="height:8px;background:#2563eb;border-radius:4px;width:${pct(ages[k],totAge)}%;min-width:2px"></div></td></tr>`:'').join('')}
     </table>`;
 
-  // ── 採用コスト（実績報告）
-  const mds = rp ? Object.entries(rp.media).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
-  G('cost-card').innerHTML=`
-    <div class="ir"><span class="ir-k">累計採用コスト</span><span class="ir-v neg">${fmtYK(totalCost)}</span></div>
-    <div class="ir"><span class="ir-k">採用単価</span><span class="ir-v ${hireUnit>200000?'neg':''}">${fmtY(hireUnit)}</span></div>
-    <div class="ir"><span class="ir-k">応募単価</span><span class="ir-v">${fmtY(appUnit)}</span></div>
-    <div class="ir"><span class="ir-k">昨年採用単価</span><span class="ir-v">${fmtY(CFG.hireUnitLY)}</span></div>
-    <div class="ir"><span class="ir-k">昨年応募単価</span><span class="ir-v">${fmtY(CFG.appUnitLY)}</span></div>`;
-
-  G('md-tbl').innerHTML=`<table class="tbl">
-    <tr><th style="text-align:left">媒体</th><th>採用コスト</th><th>割合</th></tr>
-    ${mds.map(([n,m])=>`<tr><td>${n}</td><td>${fmtYK(m.cost)}</td><td>${pct(m.cost,totalCost)}%</td></tr>`).join('')}
-    ${mds.length>1?`<tr class="total"><td>合計</td><td>${fmtYK(mds.reduce((s,[,m])=>s+m.cost,0))}</td><td>100%</td></tr>`:''}
-  </table>`;
-
   // ── グラフ
+  const branches = ap ? Object.entries(ap.branches).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)) : [];
+  const monthRows = ap ? ap.monthRows : MY.map((ym,i)=>({ym,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
+  const mds = rp ? Object.entries(rp.media||{}).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
   renderCharts(monthRows, areas, branches, mds, totalCost, m, f, ages);
   calcSim(appUnit);
 }
