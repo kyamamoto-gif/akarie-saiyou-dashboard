@@ -542,13 +542,16 @@ function renderAll(){
 
   const doneMonths = ap ? ap.monthRows.filter(m=>m.apps>0||m.joins>0).length : 1;
   const nd = doneMonths||1;
+  const mLeft = Math.max(12-nd, 0);
   const avgJoins = totalJoins/nd;
-  const fcastJoins = Math.round(avgJoins*12);
+  // 着地予測：累計入社数 + 現ペース × 残月数
+  const fcastJoins = totalJoins + Math.round(avgJoins * mLeft);
   const ach = pct(totalJoins, CFG.target);
-  const rem = CFG.target-totalJoins;
+  // 残り採用目標 ÷ 残月数
+  const rem = CFG.target - totalJoins;
+  const neededPerMonth = mLeft>0 ? Math.round(rem/mLeft*10)/10 : 0;
   const nApps = totalJoins>0 ? Math.round(rem*(totalApps/totalJoins)) : Math.round(rem*(1356/87));
   const nBgt  = Math.round(nApps*(appUnit||CFG.appUnitLY));
-  const mLeft = Math.max(12-nd, 0);
 
   G('sim-t').textContent = CFG.target;
 
@@ -598,10 +601,10 @@ function renderAll(){
   // ── 着地予測
   G('fc-card').innerHTML=`
     <div class="ir"><span class="ir-k">年間着地予測（入社）</span><span class="ir-v ${fcastJoins<CFG.target?'neg':'pos'}">${fcastJoins}名</span></div>
-    <div class="ir"><span class="ir-k">月平均入社ペース</span><span class="ir-v">${Math.round(avgJoins*10)/10}名/月</span></div>
-    <div class="ir"><span class="ir-k">面接着地予測</span><span class="ir-v">${Math.round(totalInterviews/nd*12)}名</span></div>
-    <div class="ir"><span class="ir-k">内定着地予測</span><span class="ir-v">${Math.round(totalOffers/nd*12)}名</span></div>
-    <div class="ir"><span class="ir-k">目標達成に月平均</span><span class="ir-v">${mLeft>0?Math.round(rem/mLeft*10)/10:'-'}名/月 必要</span></div>
+    <div class="ir"><span class="ir-k">現在の月平均入社数</span><span class="ir-v">${Math.round(avgJoins*10)/10}名/月</span></div>
+    <div class="ir"><span class="ir-k">残り採用目標</span><span class="ir-v ${rem>0?'neg':''}">${rem}名</span></div>
+    <div class="ir"><span class="ir-k">残月数</span><span class="ir-v">${mLeft}ヶ月</span></div>
+    <div class="ir"><span class="ir-k">月間必要入社数</span><span class="ir-v ${neededPerMonth>avgJoins?'neg':''}">${mLeft>0?neededPerMonth:'-'}名/月</span></div>
     <div class="pw"><div class="pf" style="width:${Math.min(ach,100)}%;background:${ach<50?'#dc2626':'#16a34a'}"></div></div>
     <div style="font-size:11px;color:var(--t3);margin-top:5px">達成率 ${ach}%（${totalJoins}名 / ${CFG.target}名）</div>`;
 
