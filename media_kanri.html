@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>媒体×原稿管理｜株式会社アカリエ</title>
+<style>
+:root{
+  --bg:#f5f4f0;--sur:#fff;--s2:#f0efe9;--bd:rgba(0,0,0,.08);--b2:rgba(0,0,0,.14);
+  --tx:#1a1a18;--t2:#5a5a56;--t3:#9a9a94;
+  --blue:#2563eb;--bl:#dbeafe;--green:#16a34a;--gl:#dcfce7;
+  --red:#dc2626;--rl:#fee2e2;--amber:#d97706;--al:#fef3c7;
+  --purple:#7c3aed;--pl:#ede9fe;
+  --acc:#1e3a5f;--r:10px;--rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
+
+/* HEADER */
+.hd{background:var(--acc);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.hd-title{font-size:17px;font-weight:700}.hd-sub{font-size:11px;opacity:.6;margin-top:1px}
+.hd-r{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:6px 14px;border-radius:var(--rs);border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;white-space:nowrap;transition:opacity .15s}.btn:hover{opacity:.85}
+.btn-w{background:#fff;color:var(--acc)}.btn-o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}.btn-g{background:#16a34a;color:#fff}.btn-a{background:var(--acc);color:#fff}.btn-r{background:var(--red);color:#fff}
+
+/* NAV TABS */
+.nav{background:var(--sur);border-bottom:.5px solid var(--b2);padding:0 1.5rem;display:flex;gap:0}
+.nav-tab{padding:.75rem 1.25rem;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.nav-tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+.nav-tab:hover:not(.active){color:var(--tx);background:var(--s2)}
+.page{display:none}.page.active{display:block}
+
+.con{max-width:1400px;margin:0 auto;padding:1.25rem 1.5rem}
+.sec{margin-bottom:1.5rem}
+.sec-ttl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem}
+.card{background:var(--sur);border:.5px solid var(--b2);border-radius:var(--r);padding:1.1rem 1.25rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+
+/* FILTERS */
+.filter-bar{background:var(--sur);border:.5px solid var(--b2);border-radius:var(--r);padding:.75rem 1.1rem;margin-bottom:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:center}
+.filter-label{font-size:11px;font-weight:700;color:var(--t3);white-space:nowrap}
+.filter-select,.filter-input{border:.5px solid var(--b2);border-radius:var(--rs);padding:5px 10px;font-size:12px;background:var(--s2);color:var(--tx);outline:none;font-family:inherit}
+.filter-select:focus,.filter-input:focus{border-color:var(--blue);background:#fff}
+.filter-btn{padding:5px 12px;border-radius:var(--rs);border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit}
+.fb-active{background:var(--acc);color:#fff}
+.fb-inactive{background:var(--s2);color:var(--t2)}
+
+/* ALERT CARDS */
+.alert-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:1.25rem}
+.alert-card{border-radius:var(--rs);padding:.7rem 1rem;display:flex;align-items:flex-start;gap:8px;font-size:12px}
+.alert-card.danger{background:var(--rl);color:#7f1d1d}
+.alert-card.warn{background:var(--al);color:#78350f}
+.alert-card.info{background:var(--bl);color:#1e40af}
+.alert-card .ai{font-size:14px;flex-shrink:0}
+
+/* MATRIX TABLE */
+.matrix-wrap{overflow-x:auto;overflow-y:auto;max-height:70vh}
+.matrix{border-collapse:collapse;font-size:12px;white-space:nowrap}
+.matrix th{background:var(--acc);color:#fff;padding:6px 10px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.04em;position:sticky;top:0;z-index:10}
+.matrix th:first-child{text-align:left;min-width:100px;position:sticky;left:0;z-index:20}
+.matrix th:nth-child(2){text-align:left;min-width:120px;position:sticky;left:100px;z-index:20}
+.matrix td{padding:5px 8px;border-bottom:.5px solid var(--bd);border-right:.5px solid var(--bd);text-align:center;vertical-align:middle}
+.matrix td:first-child{text-align:left;font-weight:600;background:var(--sur);position:sticky;left:0;z-index:5;border-right:.5px solid var(--b2)}
+.matrix td:nth-child(2){text-align:left;background:var(--s2);position:sticky;left:100px;z-index:5;border-right:.5px solid var(--b2)}
+.matrix tr:hover td{background:#f8f7f3}
+.matrix tr:hover td:first-child,.matrix tr:hover td:nth-child(2){background:#eeecea}
+.matrix td:first-child,.matrix td:nth-child(2){z-index:5}
+
+/* CELL STATES */
+.cell-on{background:var(--gl);color:#14532d;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:none;font-family:inherit}
+.cell-on:hover{background:#bbf7d0}
+.cell-off{background:var(--s2);color:var(--t3);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:.5px dashed var(--bd);font-family:inherit}
+.cell-off:hover{background:var(--bl);color:#1e40af;border-color:#93c5fd}
+.cell-count{background:var(--acc);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
+.cell-count.low{background:var(--red)}
+.cell-count.mid{background:var(--amber)}
+.cell-count.high{background:var(--green)}
+
+/* BADGES */
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;margin-right:2px}
+.b-kyugi{background:#fee2e2;color:#991b1b}
+.b-july{background:#fef3c7;color:#92400e}
+.b-aug{background:#dbeafe;color:#1e40af}
+.b-sep{background:#f3e8ff;color:#6b21a8}
+.b-ok{background:#dcfce7;color:#14532d}
+
+/* SUMMARY CARDS */
+.sum-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1.25rem}
+.sum-card{background:var(--s2);border-radius:var(--rs);padding:.75rem 1rem}
+.sum-l{font-size:10px;color:var(--t3);font-weight:700;margin-bottom:3px}
+.sum-v{font-size:20px;font-weight:700}
+.sum-s{font-size:10px;color:var(--t3);margin-top:3px}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;overflow-y:auto;padding:1.5rem;justify-content:center}
+.modal.open{display:flex}
+.modal-inner{background:#fff;border-radius:var(--r);padding:1.5rem;max-width:560px;width:100%;position:relative;height:fit-content}
+.modal-close{position:absolute;top:.75rem;right:.75rem;background:none;border:none;font-size:18px;cursor:pointer;color:var(--t3)}
+.modal-ttl{font-size:15px;font-weight:700;color:var(--acc);margin-bottom:1rem}
+.form-g{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.ff{display:flex;flex-direction:column;gap:3px}
+.ff.full{grid-column:1/-1}
+.ff label{font-size:10px;color:var(--t2);font-weight:700}
+.ff input,.ff select,.ff textarea{border:.5px solid var(--b2);border-radius:var(--rs);padding:6px 9px;font-size:12px;background:var(--s2);color:var(--tx);outline:none;width:100%;font-family:inherit}
+.ff input:focus,.ff select:focus,.ff textarea:focus{border-color:var(--blue);background:#fff}
+.ff textarea{resize:vertical;min-height:60px}
+
+/* LOG PAGE */
+.log-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.log-card{background:var(--sur);border:.5px solid var(--b2);border-radius:var(--r);padding:1rem;position:relative}
+.log-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.5rem;gap:.5rem}
+.log-ttl{font-size:13px;font-weight:700}
+.log-meta{font-size:10px;color:var(--t3);margin-bottom:.5rem}
+.log-branches{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.5rem}
+.log-branch{background:var(--s2);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600}
+.log-branch.done{background:var(--gl);color:#14532d;text-decoration:line-through;opacity:.7}
+.log-memo{font-size:11px;color:var(--t2);background:var(--s2);border-radius:var(--rs);padding:5px 8px;margin-top:.4rem}
+.status-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.sb-pending{background:var(--rl);color:#7f1d1d}
+.sb-inprog{background:var(--al);color:#78350f}
+.sb-done{background:var(--gl);color:#14532d}
+.priority-kyugi{border-left:3px solid var(--red)}
+.priority-month{border-left:3px solid var(--amber)}
+.priority-normal{border-left:3px solid var(--bd)}
+
+/* DETAIL PANEL */
+.detail-panel{background:var(--sur);border:.5px solid var(--b2);border-radius:var(--r);padding:1.1rem 1.25rem;margin-bottom:1.25rem;display:none}
+.detail-panel.open{display:block}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:.75rem}
+.di{background:var(--s2);border-radius:var(--rs);padding:.5rem .75rem}
+.di-l{font-size:9px;color:var(--t3);font-weight:700;margin-bottom:2px}
+.di-v{font-size:13px;font-weight:600}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.toolbar-sep{width:1px;height:20px;background:var(--b2);margin:0 4px}
+
+.neg{color:var(--red)}.pos{color:var(--green)}.wrn{color:var(--amber)}
+
+@media(max-width:700px){.g2,.g3,.g4{grid-template-columns:1fr}.form-g{grid-template-columns:1fr}.filter-bar{flex-direction:column;align-items:flex-start}}
+@media print{.hd,.nav,.filter-bar,.toolbar,.modal{display:none!important}}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div>
+    <div class="hd-title">媒体×原稿管理｜株式会社アカリエ</div>
+    <div class="hd-sub" id="hd-date"></div>
+  </div>
+  <div class="hd-r">
+    <button class="btn btn-g" onclick="openModal('modal-add-listing')">＋ 原稿追加</button>
+    <button class="btn btn-o" onclick="openModal('modal-add-log')">＋ 注力ログ追加</button>
+    <a href="index.html" class="btn btn-o">📊 KPIダッシュボード</a>
+    <button class="btn btn-w" onclick="exportCSV()">📥 CSV出力</button>
+    <button class="btn btn-o" onclick="window.print()">🖨 印刷</button>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-tab active" onclick="switchPage('media')">📋 媒体×原稿管理</div>
+  <div class="nav-tab" onclick="switchPage('log')">🎯 注力ログ</div>
+  <div class="nav-tab" onclick="switchPage('summary')">📊 サマリー</div>
+</div>
+
+<!-- ========== PAGE: MEDIA ========== -->
+<div id="page-media" class="page active">
+<div class="con">
+
+<!-- アラート -->
+<div class="alert-g" id="alert-area"></div>
+
+<!-- サマリーカード -->
+<div class="sum-g" id="sum-cards"></div>
+
+<!-- フィルター -->
+<div class="filter-bar">
+  <span class="filter-label">🔍 フィルター</span>
+  <select class="filter-select" id="f-branch" onchange="applyFilter()"><option value="">拠点：すべて</option></select>
+  <select class="filter-select" id="f-job" onchange="applyFilter()"><option value="">職種：すべて</option></select>
+  <select class="filter-select" id="f-media" onchange="applyFilter()"><option value="">媒体：すべて</option></select>
+  <select class="filter-select" id="f-status" onchange="applyFilter()">
+    <option value="">掲載状況：すべて</option>
+    <option value="on">掲載中あり</option>
+    <option value="off">未掲載のみ</option>
+  </select>
+  <select class="filter-select" id="f-focus" onchange="applyFilter()">
+    <option value="">注力状況：すべて</option>
+    <option value="急ぎ">急ぎ</option>
+    <option value="注力">注力</option>
+    <option value="通常">通常</option>
+  </select>
+  <button class="filter-btn fb-inactive" onclick="resetFilter()">リセット</button>
+</div>
+
+<!-- ツールバー -->
+<div class="toolbar">
+  <button class="btn btn-a" onclick="openModal('modal-add-listing')">＋ 原稿追加</button>
+  <button class="btn" style="background:var(--s2);color:var(--t2)" onclick="openModal('modal-add-branch')">＋ 拠点追加</button>
+  <button class="btn" style="background:var(--s2);color:var(--t2)" onclick="openModal('modal-add-job')">＋ 職種追加</button>
+  <button class="btn" style="background:var(--s2);color:var(--t2)" onclick="openModal('modal-add-media')">＋ 媒体追加</button>
+  <div class="toolbar-sep"></div>
+  <span style="font-size:11px;color:var(--t3)">表示: <span id="count-label">—</span> 件</span>
+</div>
+
+<!-- MATRIX -->
+<div class="card" style="padding:0;overflow:hidden">
+  <div class="matrix-wrap">
+    <table class="matrix" id="matrix-table"></table>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ========== PAGE: LOG ========== -->
+<div id="page-log" class="page">
+<div class="con">
+
+<div class="toolbar">
+  <button class="btn btn-a" onclick="openModal('modal-add-log')">＋ 注力ログ追加</button>
+  <div class="toolbar-sep"></div>
+  <select class="filter-select" id="lf-month" onchange="renderLog()"><option value="">月：すべて</option></select>
+  <select class="filter-select" id="lf-job" onchange="renderLog()"><option value="">職種：すべて</option></select>
+  <select class="filter-select" id="lf-priority" onchange="renderLog()">
+    <option value="">優先度：すべて</option>
+    <option value="急ぎ">急ぎ</option>
+    <option value="月次注力">月次注力</option>
+    <option value="通常">通常</option>
+  </select>
+  <select class="filter-select" id="lf-status" onchange="renderLog()">
+    <option value="">対応状況：すべて</option>
+    <option value="未対応">未対応</option>
+    <option value="対応中">対応中</option>
+    <option value="完了">完了</option>
+  </select>
+</div>
+
+<div class="log-g" id="log-area"></div>
+<div id="log-empty" style="color:var(--t3);font-size:13px;padding:2rem;text-align:center;display:none">注力ログがありません。「＋ 注力ログ追加」から追加してください。</div>
+
+</div>
+</div>
+
+<!-- ========== PAGE: SUMMARY ========== -->
+<div id="page-summary" class="page">
+<div class="con">
+
+<div class="sec">
+  <div class="sec-ttl">📊 媒体別掲載数</div>
+  <div class="card" style="overflow-x:auto"><table class="matrix" id="media-summary-tbl" style="position:static"></table></div>
+</div>
+
+<div class="sec g2">
+  <div>
+    <div class="sec-ttl">🏢 拠点別掲載状況</div>
+    <div class="card" style="overflow-x:auto"><div id="branch-summary"></div></div>
+  </div>
+  <div>
+    <div class="sec-ttl">💼 職種別掲載状況</div>
+    <div class="card" style="overflow-x:auto"><div id="job-summary"></div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sec-ttl">⚠️ 要対応一覧（掲載数不足・更新期限超過）</div>
+  <div class="card" style="overflow-x:auto"><div id="action-required"></div></div>
+</div>
+
+</div>
+</div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- 原稿追加 -->
+<div class="modal" id="modal-add-listing">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeModal('modal-add-listing')">✕</button>
+    <div class="modal-ttl">＋ 原稿追加</div>
+    <div class="form-g">
+      <div class="ff"><label>拠点</label><select id="al-branch"></select></div>
+      <div class="ff"><label>職種</label><select id="al-job"></select></div>
+      <div class="ff"><label>媒体</label><select id="al-media"></select></div>
+      <div class="ff"><label>掲載状況</label>
+        <select id="al-status">
+          <option value="on">掲載中</option>
+          <option value="off">停止中</option>
+          <option value="未掲載">未掲載</option>
+        </select>
+      </div>
+      <div class="ff"><label>原稿タイトル</label><input type="text" id="al-title" placeholder="例: サ責（経験者）募集"></div>
+      <div class="ff"><label>掲載開始日</label><input type="date" id="al-start"></div>
+      <div class="ff"><label>最終更新日</label><input type="date" id="al-updated"></div>
+      <div class="ff"><label>停止日</label><input type="date" id="al-stop"></div>
+      <div class="ff full"><label>メモ</label><textarea id="al-memo" placeholder="備考など"></textarea></div>
+    </div>
+    <button class="btn btn-a" style="width:100%;padding:10px" onclick="addListing()">✅ 追加</button>
+  </div>
+</div>
+
+<!-- 拠点追加 -->
+<div class="modal" id="modal-add-branch">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeModal('modal-add-branch')">✕</button>
+    <div class="modal-ttl">＋ 拠点追加</div>
+    <div class="ff" style="margin-bottom:1rem"><label>拠点名</label><input type="text" id="nb-name" placeholder="例: A-Smile渋谷"></div>
+    <div class="ff" style="margin-bottom:1rem"><label>エリア</label>
+      <select id="nb-area">
+        <option>神奈川</option><option>東京</option><option>愛知</option><option>その他</option>
+      </select>
+    </div>
+    <button class="btn btn-a" style="width:100%;padding:10px" onclick="addBranch()">✅ 追加</button>
+  </div>
+</div>
+
+<!-- 職種追加 -->
+<div class="modal" id="modal-add-job">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeModal('modal-add-job')">✕</button>
+    <div class="modal-ttl">＋ 職種追加</div>
+    <div class="ff" style="margin-bottom:1rem"><label>職種名</label><input type="text" id="nj-name" placeholder="例: ヘルパー（夜勤）"></div>
+    <button class="btn btn-a" style="width:100%;padding:10px" onclick="addJob()">✅ 追加</button>
+  </div>
+</div>
+
+<!-- 媒体追加 -->
+<div class="modal" id="modal-add-media">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeModal('modal-add-media')">✕</button>
+    <div class="modal-ttl">＋ 媒体追加</div>
+    <div class="ff" style="margin-bottom:1rem"><label>媒体名</label><input type="text" id="nm-name" placeholder="例: バイトル"></div>
+    <div class="ff" style="margin-bottom:1rem"><label>必須媒体</label>
+      <select id="nm-required"><option value="0">通常</option><option value="1">必須</option></select>
+    </div>
+    <button class="btn btn-a" style="width:100%;padding:10px" onclick="addMedia()">✅ 追加</button>
+  </div>
+</div>
+
+<!-- 注力ログ追加 -->
+<div class="modal" id="modal-add-log">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeModal('modal-add-log')">✕</button>
+    <div class="modal-ttl">＋ 注力ログ追加</div>
+    <div class="form-g">
+      <div class="ff"><label>受領月</label><input type="month" id="lg-month"></div>
+      <div class="ff"><label>優先度</label>
+        <select id="lg-priority">
+          <option value="急ぎ">急ぎ</option>
+          <option value="月次注力">月次注力</option>
+          <option value="通常">通常</option>
+        </select>
+      </div>
+      <div class="ff"><label>職種</label><select id="lg-job"></select></div>
+      <div class="ff"><label>対応状況</label>
+        <select id="lg-status">
+          <option value="未対応">未対応</option>
+          <option value="対応中">対応中</option>
+          <option value="完了">完了</option>
+        </select>
+      </div>
+      <div class="ff full"><label>拠点（カンマ区切りで複数可）</label><input type="text" id="lg-branches" placeholder="例: 鶴舞,井土ヶ谷,国分寺"></div>
+      <div class="ff"><label>雇用形態/条件</label><input type="text" id="lg-condition" placeholder="例: 非常勤OK"></div>
+      <div class="ff"><label>期限目安</label><input type="month" id="lg-deadline"></div>
+      <div class="ff full"><label>担当者</label><input type="text" id="lg-person" placeholder="例: 山田"></div>
+      <div class="ff full"><label>メモ</label><textarea id="lg-memo" placeholder="備考・対応履歴など"></textarea></div>
+    </div>
+    <button class="btn btn-a" style="width:100%;padding:10px" onclick="addLog()">✅ 追加</button>
+  </div>
+</div>
+
+<!-- 詳細編集 -->
+<div class="modal" id="modal-edit">
+  <div class="modal-inner">
+    <button class="modal-close" onclick="closeModal('modal-edit')">✕</button>
+    <div class="modal-ttl" id="edit-ttl">編集</div>
+    <div class="form-g" id="edit-form"></div>
+    <div style="display:flex;gap:8px;margin-top:.5rem">
+      <button class="btn btn-a" style="flex:1;padding:10px" onclick="saveEdit()">✅ 保存</button>
+      <button class="btn btn-r" style="padding:10px 16px" onclick="deleteItem()">🗑 削除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DATA
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+const DEFAULT = {
+  branches: [
+    {id:'b1',name:'A-Smile川崎東',area:'神奈川'},
+    {id:'b2',name:'A-Smile井土ヶ谷',area:'神奈川'},
+    {id:'b3',name:'A-Smile新横浜',area:'神奈川'},
+    {id:'b4',name:'A-Smile溝ノ口',area:'神奈川'},
+    {id:'b5',name:'A-Smile二俣川',area:'神奈川'},
+    {id:'b6',name:'A-Smile藤沢',area:'神奈川'},
+    {id:'b7',name:'A-Smile横浜',area:'神奈川'},
+    {id:'b8',name:'A-Smile戸塚',area:'神奈川'},
+    {id:'b9',name:'A-Smile湘南台',area:'神奈川'},
+    {id:'b10',name:'A-Smile大和',area:'神奈川'},
+    {id:'b11',name:'A-Smile関内',area:'神奈川'},
+    {id:'b12',name:'A-Smile東林間',area:'神奈川'},
+    {id:'b13',name:'A-Smile西谷',area:'神奈川'},
+    {id:'b14',name:'A-Smile吉祥寺',area:'東京'},
+    {id:'b15',name:'A-Smile蒲田',area:'東京'},
+    {id:'b16',name:'A-Smile下北沢',area:'東京'},
+    {id:'b17',name:'A-Smile国分寺',area:'東京'},
+    {id:'b18',name:'A-Smile町田',area:'東京'},
+    {id:'b19',name:'A-Smile鶴舞',area:'愛知'},
+    {id:'b20',name:'A-Smile高畑',area:'愛知'},
+  ],
+  jobs: [
+    {id:'j1',name:'事業管理'},
+    {id:'j2',name:'サ責'},
+    {id:'j3',name:'ヘルパー'},
+    {id:'j4',name:'非常勤'},
+  ],
+  medias: [
+    {id:'m1',name:'AirWORK/Indeed',required:1},
+    {id:'m2',name:'ジョブメドレー',required:1},
+    {id:'m3',name:'介護ジョブ',required:0},
+    {id:'m4',name:'マッハバイト',required:0},
+    {id:'m5',name:'バイトルPRO',required:0},
+    {id:'m6',name:'engage',required:0},
+    {id:'m7',name:'HP',required:0},
+    {id:'m8',name:'その他',required:0},
+  ],
+  listings: [
+    {id:'l1',branchId:'b19',jobId:'j2',mediaId:'m1',status:'on',title:'サ責募集',startDate:'2026-04-01',updatedDate:'2026-04-15',stopDate:'',memo:''},
+    {id:'l2',branchId:'b19',jobId:'j2',mediaId:'m2',status:'on',title:'サ責募集',startDate:'2026-04-01',updatedDate:'2026-04-10',stopDate:'',memo:''},
+    {id:'l3',branchId:'b19',jobId:'j2',mediaId:'m3',status:'on',title:'サ責（経験者）',startDate:'2026-04-01',updatedDate:'2026-03-01',stopDate:'',memo:'要更新'},
+    {id:'l4',branchId:'b14',jobId:'j3',mediaId:'m1',status:'on',title:'ヘルパー募集',startDate:'2026-05-01',updatedDate:'2026-05-01',stopDate:'',memo:''},
+    {id:'l5',branchId:'b14',jobId:'j3',mediaId:'m2',status:'on',title:'ヘルパー募集',startDate:'2026-05-01',updatedDate:'2026-05-01',stopDate:'',memo:''},
+    {id:'l6',branchId:'b3',jobId:'j4',mediaId:'m1',status:'on',title:'非常勤募集',startDate:'2026-04-15',updatedDate:'2026-04-15',stopDate:'',memo:''},
+    {id:'l7',branchId:'b3',jobId:'j4',mediaId:'m3',status:'on',title:'非常勤募集',startDate:'2026-04-15',updatedDate:'2026-04-15',stopDate:'',memo:''},
+  ],
+  logs: [
+    {id:'lg1',month:'2026-07',priority:'急ぎ',jobId:'j2',branches:'鶴舞,井土ヶ谷,吉祥寺,国分寺,東林間',condition:'',deadline:'2026-07',person:'',memo:'',status:'未対応'},
+    {id:'lg2',month:'2026-07',priority:'月次注力',jobId:'j1',branches:'鶴舞',condition:'',deadline:'2026-07',person:'',memo:'',status:'未対応'},
+    {id:'lg3',month:'2026-07',priority:'急ぎ',jobId:'j3',branches:'東林間,国分寺,吉祥寺,溝ノ口,戸塚',condition:'',deadline:'2026-07',person:'',memo:'',status:'未対応'},
+    {id:'lg4',month:'2026-08',priority:'月次注力',jobId:'j3',branches:'藤沢',condition:'',deadline:'2026-08',person:'',memo:'',status:'未対応'},
+    {id:'lg5',month:'2026-07',priority:'急ぎ',jobId:'j4',branches:'新横浜',condition:'非常勤OK',deadline:'2026-07',person:'',memo:'',status:'未対応'},
+    {id:'lg6',month:'2026-08',priority:'月次注力',jobId:'j1',branches:'鶴舞',condition:'',deadline:'2026-08',person:'',memo:'管理者候補',status:'未対応'},
+  ],
+};
+
+let D = loadData();
+let editTarget = null;
+
+function loadData(){
+  try{ const s=localStorage.getItem('akarie_media'); if(s) return JSON.parse(s); }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT));
+}
+function save(){ try{localStorage.setItem('akarie_media',JSON.stringify(D));}catch(e){} }
+
+const uid = () => 'id' + Date.now() + Math.random().toString(36).slice(2,6);
+const today = () => new Date().toISOString().split('T')[0];
+const daysSince = d => d ? Math.floor((Date.now()-new Date(d))/(86400000)) : 999;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PAGE SWITCH
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function switchPage(p){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  event.target.classList.add('active');
+  if(p==='summary') renderSummary();
+  if(p==='log') renderLog();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SELECTS BUILD
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildSelects(){
+  const bOpts = D.branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  const jOpts = D.jobs.map(j=>`<option value="${j.id}">${j.name}</option>`).join('');
+  const mOpts = D.medias.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+
+  ['al-branch'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=bOpts; });
+  ['al-job','lg-job'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=jOpts; });
+  ['al-media'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=mOpts; });
+
+  // フィルター
+  const fb=document.getElementById('f-branch');
+  const fj=document.getElementById('f-job');
+  const fm=document.getElementById('f-media');
+  fb.innerHTML='<option value="">拠点：すべて</option>'+D.branches.map(b=>`<option value="${b.id}">${b.name}</option>`).join('');
+  fj.innerHTML='<option value="">職種：すべて</option>'+D.jobs.map(j=>`<option value="${j.id}">${j.name}</option>`).join('');
+  fm.innerHTML='<option value="">媒体：すべて</option>'+D.medias.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
+
+  // ログフィルター
+  const lfj=document.getElementById('lf-job');
+  if(lfj) lfj.innerHTML='<option value="">職種：すべて</option>'+jOpts;
+  const months=[...new Set(D.logs.map(l=>l.month))].sort().reverse();
+  const lfm=document.getElementById('lf-month');
+  if(lfm) lfm.innerHTML='<option value="">月：すべて</option>'+months.map(m=>`<option value="${m}">${m}</option>`).join('');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GET FOCUS BADGES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function getFocusBadges(branchName, jobId){
+  const badges = [];
+  const now = new Date();
+  D.logs.forEach(lg=>{
+    const bList = lg.branches.split(',').map(s=>s.trim());
+    const job = D.jobs.find(j=>j.id===lg.jobId);
+    if(!bList.some(b=>branchName.includes(b)||b.includes(branchName.replace('A-Smile','').trim()))) return;
+    if(jobId && lg.jobId !== jobId) return;
+    if(lg.status==='完了') return;
+    const dlDate = lg.deadline ? new Date(lg.deadline+'-01') : null;
+    if(dlDate && dlDate < new Date(now.getFullYear(), now.getMonth(), 1)) return;
+    if(lg.priority==='急ぎ') badges.push('<span class="badge b-kyugi">急ぎ</span>');
+    else if(lg.priority==='月次注力'){
+      const m=lg.month||lg.deadline||'';
+      badges.push(`<span class="badge b-july">${m?m.replace('-','/')+'注力':'注力'}</span>`);
+    }
+    if(lg.condition) badges.push(`<span class="badge b-ok">${lg.condition}</span>`);
+  });
+  return [...new Set(badges)].join('');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RENDER MATRIX
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function applyFilter(){ renderMatrix(); }
+function resetFilter(){
+  ['f-branch','f-job','f-media','f-status','f-focus'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderMatrix();
+}
+
+function renderMatrix(){
+  const fBranch = document.getElementById('f-branch').value;
+  const fJob    = document.getElementById('f-job').value;
+  const fMedia  = document.getElementById('f-media').value;
+  const fStatus = document.getElementById('f-status').value;
+  const fFocus  = document.getElementById('f-focus').value;
+
+  // 表示対象の拠点×職種ペアを決定
+  let pairs = [];
+  D.branches.forEach(b=>{
+    if(fBranch && b.id!==fBranch) return;
+    D.jobs.forEach(j=>{
+      if(fJob && j.id!==fJob) return;
+      // この拠点×職種のリスティング
+      const ls = D.listings.filter(l=>l.branchId===b.id && l.jobId===j.id);
+      if(fStatus==='on' && !ls.some(l=>l.status==='on')) return;
+      if(fStatus==='off' && ls.length>0) return;
+      // フォーカスフィルター
+      if(fFocus){
+        const badges = getFocusBadges(b.name, j.id);
+        if(!badges.includes(fFocus==='急ぎ'?'b-kyugi':fFocus==='注力'?'b-july':'通常')) return;
+      }
+      pairs.push({b,j,ls});
+    });
+  });
+
+  // 表示媒体
+  const showMedias = fMedia ? D.medias.filter(m=>m.id===fMedia) : D.medias;
+
+  document.getElementById('count-label').textContent = pairs.length;
+
+  // ヘッダー
+  let html = '<thead><tr>';
+  html += '<th>拠点</th><th>職種</th>';
+  showMedias.forEach(m=>{
+    html += `<th>${m.name}${m.required?'<br><span style="font-size:9px;opacity:.7">必須</span>':''}</th>`;
+  });
+  html += '<th>掲載数</th><th>注力状況</th></tr></thead><tbody>';
+
+  // 行
+  pairs.forEach(({b,j,ls})=>{
+    const badges = getFocusBadges(b.name, j.id);
+    const isKyugi = badges.includes('b-kyugi');
+    const onCount = showMedias.filter(m=>ls.find(l=>l.mediaId===m.id&&l.status==='on')).length;
+    const countClass = onCount===0?'low':onCount<3?'mid':'high';
+    const rowStyle = isKyugi ? 'background:#fff5f5' : '';
+
+    html += `<tr style="${rowStyle}">`;
+    html += `<td>${b.name}<br><span style="font-size:9px;color:var(--t3)">${b.area}</span></td>`;
+    html += `<td>${j.name}</td>`;
+
+    showMedias.forEach(m=>{
+      const listing = ls.find(l=>l.mediaId===m.id);
+      if(listing){
+        const isStale = listing.updatedDate && daysSince(listing.updatedDate) > 30;
+        const staleWarn = isStale ? ' title="更新から30日以上経過"' : '';
+        if(listing.status==='on'){
+          html += `<td><button class="cell-on"${staleWarn} onclick="toggleStatus('${listing.id}')" title="${listing.title||''}">●<span style="font-size:9px">${isStale?'⚠':'掲載中'}</span></button></td>`;
+        } else {
+          html += `<td><button class="cell-off" onclick="toggleStatus('${listing.id}')">停止中</button></td>`;
+        }
+      } else {
+        html += `<td><button class="cell-off" onclick="quickAdd('${b.id}','${j.id}','${m.id}')">＋</button></td>`;
+      }
+    });
+
+    html += `<td><span class="cell-count ${countClass}">${onCount}</span></td>`;
+    html += `<td style="min-width:120px">${badges||'<span style="color:var(--t3);font-size:10px">—</span>'}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody>';
+  document.getElementById('matrix-table').innerHTML = html;
+
+  renderAlerts(pairs, showMedias);
+  renderSumCards(pairs, showMedias);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ALERTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderAlerts(pairs, showMedias){
+  const alerts = [];
+  let staleCount=0, lowCount=0, focusLowCount=0, requiredMissingCount=0;
+
+  pairs.forEach(({b,j,ls})=>{
+    const badges = getFocusBadges(b.name, j.id);
+    const isKyugi = badges.includes('b-kyugi');
+    const onCount = showMedias.filter(m=>ls.find(l=>l.mediaId===m.id&&l.status==='on')).length;
+
+    if(isKyugi && onCount < 2) focusLowCount++;
+    if(onCount < 1) lowCount++;
+
+    const required = showMedias.filter(m=>m.required);
+    required.forEach(m=>{
+      if(!ls.find(l=>l.mediaId===m.id&&l.status==='on')) requiredMissingCount++;
+    });
+
+    ls.forEach(l=>{
+      if(l.updatedDate && daysSince(l.updatedDate) > 30) staleCount++;
+    });
+  });
+
+  if(focusLowCount>0) alerts.push({c:'danger',icon:'⚠️',msg:`注力拠点なのに掲載媒体数が少ない：${focusLowCount}件`});
+  if(requiredMissingCount>0) alerts.push({c:'danger',icon:'🚨',msg:`必須媒体に未掲載：${requiredMissingCount}件`});
+  if(staleCount>0) alerts.push({c:'warn',icon:'🕐',msg:`原稿更新から30日超過：${staleCount}件（セルに⚠マーク）`});
+  if(lowCount>0) alerts.push({c:'warn',icon:'📋',msg:`掲載媒体数0件：${lowCount}拠点×職種`});
+
+  const urgentLogs = D.logs.filter(l=>l.priority==='急ぎ'&&l.status!=='完了');
+  if(urgentLogs.length>0) alerts.push({c:'danger',icon:'🎯',msg:`未対応の急ぎ注力：${urgentLogs.length}件`});
+
+  if(alerts.length===0) alerts.push({c:'info',icon:'✅',msg:'現時点でのアラートはありません'});
+
+  document.getElementById('alert-area').innerHTML = alerts.map(a=>
+    `<div class="alert-card ${a.c}"><span class="ai">${a.icon}</span><span>${a.msg}</span></div>`
+  ).join('');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SUM CARDS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderSumCards(pairs, showMedias){
+  const totalListings = D.listings.filter(l=>l.status==='on').length;
+  const totalPairs = pairs.length;
+  const kyugiPairs = pairs.filter(({b,j})=>getFocusBadges(b.name,j.id).includes('b-kyugi')).length;
+  const stalePairs = D.listings.filter(l=>l.updatedDate&&daysSince(l.updatedDate)>30).length;
+  const urgentLogs = D.logs.filter(l=>l.priority==='急ぎ'&&l.status!=='完了').length;
+
+  document.getElementById('sum-cards').innerHTML = [
+    {l:'掲載中原稿数',   v:totalListings+'件',  s:'ON状態の原稿',         c:''},
+    {l:'管理拠点×職種', v:totalPairs+'件',      s:'表示中の組み合わせ',   c:''},
+    {l:'急ぎ注力',       v:kyugiPairs+'件',      s:'要強化対応',           c:kyugiPairs>0?'neg':'pos'},
+    {l:'更新期限超過',   v:stalePairs+'件',      s:'30日以上未更新',        c:stalePairs>0?'wrn':''},
+    {l:'未対応注力',     v:urgentLogs+'件',      s:'ログ管理より',          c:urgentLogs>0?'neg':''},
+  ].map(k=>`<div class="sum-card"><div class="sum-l">${k.l}</div><div class="sum-v ${k.c}">${k.v}</div><div class="sum-s">${k.s}</div></div>`).join('');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TOGGLE / QUICK ADD
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function toggleStatus(id){
+  const l = D.listings.find(l=>l.id===id);
+  if(!l) return;
+  l.status = l.status==='on' ? 'off' : 'on';
+  l.updatedDate = today();
+  save();
+  renderMatrix();
+}
+
+function quickAdd(branchId, jobId, mediaId){
+  D.listings.push({
+    id:uid(), branchId, jobId, mediaId,
+    status:'on', title:'', startDate:today(), updatedDate:today(), stopDate:'', memo:''
+  });
+  save();
+  renderMatrix();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ADD FUNCTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function addListing(){
+  const branchId   = document.getElementById('al-branch').value;
+  const jobId      = document.getElementById('al-job').value;
+  const mediaId    = document.getElementById('al-media').value;
+  const status     = document.getElementById('al-status').value;
+  const title      = document.getElementById('al-title').value.trim();
+  const startDate  = document.getElementById('al-start').value;
+  const updatedDate= document.getElementById('al-updated').value || today();
+  const stopDate   = document.getElementById('al-stop').value;
+  const memo       = document.getElementById('al-memo').value.trim();
+  if(!branchId||!jobId||!mediaId){ alert('拠点・職種・媒体は必須です'); return; }
+  D.listings.push({id:uid(),branchId,jobId,mediaId,status,title,startDate,updatedDate,stopDate,memo});
+  save(); closeModal('modal-add-listing'); renderMatrix();
+}
+
+function addBranch(){
+  const name = document.getElementById('nb-name').value.trim();
+  const area = document.getElementById('nb-area').value;
+  if(!name){ alert('拠点名を入力してください'); return; }
+  D.branches.push({id:uid(),name,area});
+  save(); buildSelects(); closeModal('modal-add-branch'); renderMatrix();
+}
+
+function addJob(){
+  const name = document.getElementById('nj-name').value.trim();
+  if(!name){ alert('職種名を入力してください'); return; }
+  D.jobs.push({id:uid(),name});
+  save(); buildSelects(); closeModal('modal-add-job'); renderMatrix();
+}
+
+function addMedia(){
+  const name = document.getElementById('nm-name').value.trim();
+  const required = parseInt(document.getElementById('nm-required').value);
+  if(!name){ alert('媒体名を入力してください'); return; }
+  D.medias.push({id:uid(),name,required});
+  save(); buildSelects(); closeModal('modal-add-media'); renderMatrix();
+}
+
+function addLog(){
+  const month    = document.getElementById('lg-month').value;
+  const priority = document.getElementById('lg-priority').value;
+  const jobId    = document.getElementById('lg-job').value;
+  const branches = document.getElementById('lg-branches').value.trim();
+  const condition= document.getElementById('lg-condition').value.trim();
+  const deadline = document.getElementById('lg-deadline').value;
+  const person   = document.getElementById('lg-person').value.trim();
+  const memo     = document.getElementById('lg-memo').value.trim();
+  const status   = document.getElementById('lg-status').value;
+  if(!month||!branches){ alert('受領月と拠点は必須です'); return; }
+  D.logs.push({id:uid(),month,priority,jobId,branches,condition,deadline,person,memo,status});
+  save();
+  buildSelects();
+  closeModal('modal-add-log');
+  renderLog();
+  renderMatrix(); // バッジ更新
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// LOG RENDER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderLog(){
+  const fMonth    = document.getElementById('lf-month')?.value    || '';
+  const fJob      = document.getElementById('lf-job')?.value      || '';
+  const fPriority = document.getElementById('lf-priority')?.value || '';
+  const fStatus   = document.getElementById('lf-status')?.value   || '';
+
+  let logs = D.logs.filter(l=>{
+    if(fMonth    && l.month!==fMonth) return false;
+    if(fJob      && l.jobId!==fJob) return false;
+    if(fPriority && l.priority!==fPriority) return false;
+    if(fStatus   && l.status!==fStatus) return false;
+    return true;
+  });
+
+  // ソート：急ぎ→月次注力→通常、未対応→対応中→完了
+  const priOrder={'急ぎ':0,'月次注力':1,'通常':2};
+  const stOrder={'未対応':0,'対応中':1,'完了':2};
+  logs.sort((a,b)=>(priOrder[a.priority]||0)-(priOrder[b.priority]||0)||(stOrder[a.status]||0)-(stOrder[b.status]||0));
+
+  const area = document.getElementById('log-area');
+  const empty = document.getElementById('log-empty');
+
+  if(logs.length===0){ area.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  area.innerHTML = logs.map(lg=>{
+    const job = D.jobs.find(j=>j.id===lg.jobId);
+    const bList = lg.branches.split(',').map(s=>s.trim());
+    const priClass = lg.priority==='急ぎ'?'priority-kyugi':lg.priority==='月次注力'?'priority-month':'priority-normal';
+    const stClass  = lg.status==='未対応'?'sb-pending':lg.status==='対応中'?'sb-inprog':'sb-done';
+    const badgeMap = {'急ぎ':'b-kyugi','月次注力':'b-july','通常':'b-ok'};
+
+    return `<div class="log-card ${priClass}">
+      <div class="log-header">
+        <div>
+          <span class="badge ${badgeMap[lg.priority]||'b-ok'}">${lg.priority}</span>
+          <div class="log-ttl" style="margin-top:3px">${job?.name||'職種未設定'}</div>
+        </div>
+        <span class="status-badge ${stClass}">${lg.status}</span>
+      </div>
+      <div class="log-meta">受領: ${lg.month||'-'} ／ 期限: ${lg.deadline||'-'}${lg.person?' ／ 担当: '+lg.person:''}</div>
+      <div class="log-branches">
+        ${bList.map(b=>`<span class="log-branch ${lg.status==='完了'?'done':''}">${b}</span>`).join('')}
+      </div>
+      ${lg.condition?`<div style="font-size:11px;color:var(--amber);margin-bottom:3px">📌 ${lg.condition}</div>`:''}
+      ${lg.memo?`<div class="log-memo">💬 ${lg.memo}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:.75rem;flex-wrap:wrap">
+        ${lg.status!=='完了'?`<button class="btn" style="background:var(--gl);color:#14532d;font-size:11px;padding:3px 10px" onclick="setLogStatus('${lg.id}','完了')">✅ 完了</button>`:''}
+        ${lg.status==='未対応'?`<button class="btn" style="background:var(--al);color:#78350f;font-size:11px;padding:3px 10px" onclick="setLogStatus('${lg.id}','対応中')">🔄 対応中</button>`:''}
+        <button class="btn" style="background:var(--rl);color:#7f1d1d;font-size:11px;padding:3px 10px" onclick="deleteLog('${lg.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setLogStatus(id, status){
+  const lg = D.logs.find(l=>l.id===id);
+  if(lg){ lg.status=status; save(); renderLog(); renderMatrix(); }
+}
+function deleteLog(id){
+  if(!confirm('削除しますか？')) return;
+  D.logs = D.logs.filter(l=>l.id!==id);
+  save(); renderLog(); renderMatrix();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SUMMARY PAGE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function renderSummary(){
+  // 媒体別集計
+  let html = '<thead><tr><th style="text-align:left;position:static">媒体</th><th style="position:static">掲載中</th><th style="position:static">停止中</th><th style="position:static">拠点数</th></tr></thead><tbody>';
+  D.medias.forEach(m=>{
+    const onCount  = D.listings.filter(l=>l.mediaId===m.id&&l.status==='on').length;
+    const offCount = D.listings.filter(l=>l.mediaId===m.id&&l.status==='off').length;
+    const branchSet= new Set(D.listings.filter(l=>l.mediaId===m.id&&l.status==='on').map(l=>l.branchId));
+    html += `<tr><td>${m.name}${m.required?'<span class="badge b-kyugi" style="margin-left:4px">必須</span>':''}</td><td>${onCount}</td><td>${offCount}</td><td>${branchSet.size}</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('media-summary-tbl').innerHTML = html;
+
+  // 拠点別
+  let bHtml = '<table class="matrix" style="position:static;width:100%"><thead><tr><th style="text-align:left;position:static">拠点</th><th style="position:static">エリア</th><th style="position:static">掲載中</th><th style="position:static">急ぎ</th></tr></thead><tbody>';
+  D.branches.forEach(b=>{
+    const onCount = D.listings.filter(l=>l.branchId===b.id&&l.status==='on').length;
+    const hasKyugi = D.jobs.some(j=>getFocusBadges(b.name,j.id).includes('b-kyugi'));
+    bHtml += `<tr><td>${b.name}</td><td>${b.area}</td><td><span class="cell-count ${onCount===0?'low':onCount<3?'mid':'high'}">${onCount}</span></td><td>${hasKyugi?'<span class="badge b-kyugi">急ぎ</span>':'—'}</td></tr>`;
+  });
+  bHtml += '</tbody></table>';
+  document.getElementById('branch-summary').innerHTML = bHtml;
+
+  // 職種別
+  let jHtml = '<table class="matrix" style="position:static;width:100%"><thead><tr><th style="text-align:left;position:static">職種</th><th style="position:static">掲載中</th><th style="position:static">拠点数</th></tr></thead><tbody>';
+  D.jobs.forEach(j=>{
+    const onCount = D.listings.filter(l=>l.jobId===j.id&&l.status==='on').length;
+    const branchSet= new Set(D.listings.filter(l=>l.jobId===j.id&&l.status==='on').map(l=>l.branchId));
+    jHtml += `<tr><td>${j.name}</td><td>${onCount}</td><td>${branchSet.size}</td></tr>`;
+  });
+  jHtml += '</tbody></table>';
+  document.getElementById('job-summary').innerHTML = jHtml;
+
+  // 要対応一覧
+  const actions = [];
+  D.branches.forEach(b=>{
+    D.jobs.forEach(j=>{
+      const ls = D.listings.filter(l=>l.branchId===b.id&&l.jobId===j.id);
+      const onCount = ls.filter(l=>l.status==='on').length;
+      const badges = getFocusBadges(b.name, j.id);
+      const isKyugi = badges.includes('b-kyugi');
+      const requiredMissing = D.medias.filter(m=>m.required&&!ls.find(l=>l.mediaId===m.id&&l.status==='on')).map(m=>m.name);
+      const stale = ls.filter(l=>l.updatedDate&&daysSince(l.updatedDate)>30);
+
+      if(isKyugi && onCount<2) actions.push({b:b.name,j:j.name,reason:`急ぎ注力なのに掲載数${onCount}件`,severity:'danger'});
+      if(requiredMissing.length>0) actions.push({b:b.name,j:j.name,reason:`必須媒体未掲載: ${requiredMissing.join(', ')}`,severity:'danger'});
+      stale.forEach(l=>{
+        const m=D.medias.find(m=>m.id===l.mediaId);
+        actions.push({b:b.name,j:j.name,reason:`${m?.name}の原稿が${daysSince(l.updatedDate)}日未更新`,severity:'warn'});
+      });
+    });
+  });
+
+  if(actions.length===0){
+    document.getElementById('action-required').innerHTML='<div style="color:var(--t3);font-size:13px;padding:1rem">要対応項目はありません</div>';
+  } else {
+    let aHtml='<table class="matrix" style="position:static;width:100%"><thead><tr><th style="text-align:left;position:static">拠点</th><th style="text-align:left;position:static">職種</th><th style="text-align:left;position:static">内容</th></tr></thead><tbody>';
+    actions.forEach(a=>{
+      aHtml+=`<tr style="background:${a.severity==='danger'?'#fff5f5':'#fffbeb'}"><td>${a.b}</td><td>${a.j}</td><td class="${a.severity==='danger'?'neg':'wrn'}">${a.reason}</td></tr>`;
+    });
+    aHtml+='</tbody></table>';
+    document.getElementById('action-required').innerHTML=aHtml;
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CSV EXPORT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function exportCSV(){
+  let csv = '拠点,エリア,職種,媒体,掲載状況,原稿タイトル,掲載開始日,最終更新日,停止日,メモ\n';
+  D.listings.forEach(l=>{
+    const b=D.branches.find(b=>b.id===l.branchId);
+    const j=D.jobs.find(j=>j.id===l.jobId);
+    const m=D.medias.find(m=>m.id===l.mediaId);
+    csv += `"${b?.name||''}","${b?.area||''}","${j?.name||''}","${m?.name||''}","${l.status}","${l.title||''}","${l.startDate||''}","${l.updatedDate||''}","${l.stopDate||''}","${l.memo||''}"\n`;
+  });
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='media_kanri_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MODAL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e=>{
+  if(e.target.classList.contains('modal')) e.target.classList.remove('open');
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+document.getElementById('hd-date').textContent = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})+' 時点';
+document.getElementById('al-updated').value = today();
+buildSelects();
+renderMatrix();
+</script>
+</body>
+</html>
