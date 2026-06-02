@@ -302,14 +302,23 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 
 <!-- 拠点追加 -->
 <div class="modal" id="modal-add-branch">
-  <div class="modal-inner">
+  <div class="modal-inner" style="max-width:480px">
     <button class="modal-close" onclick="closeModal('modal-add-branch')">✕</button>
-    <div class="modal-ttl">＋ 拠点追加</div>
-    <div class="ff" style="margin-bottom:1rem"><label>拠点名</label><input type="text" id="nb-name" placeholder="例: A-Smile渋谷"></div>
-    <div class="ff" style="margin-bottom:1rem"><label>エリア</label>
-      <select id="nb-area">
-        <option>神奈川</option><option>東京</option><option>愛知</option><option>その他</option>
-      </select>
+    <div class="modal-ttl">🏢 拠点管理</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:.75rem">削除すると関連する原稿データもすべて削除されます</div>
+
+    <!-- 既存拠点一覧 -->
+    <div id="branch-list" style="margin-bottom:1rem;max-height:240px;overflow-y:auto;border:.5px solid var(--b2);border-radius:var(--rs)"></div>
+
+    <!-- 新規追加 -->
+    <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">＋ 新規追加</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem">
+      <div class="ff"><label>拠点名</label><input type="text" id="nb-name" placeholder="例: A-Smile渋谷"></div>
+      <div class="ff"><label>エリア</label>
+        <select id="nb-area">
+          <option>神奈川</option><option>東京</option><option>愛知</option><option>その他</option>
+        </select>
+      </div>
     </div>
     <button class="btn btn-a" style="width:100%;padding:10px" onclick="addBranch()">✅ 追加</button>
   </div>
@@ -327,12 +336,21 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 
 <!-- 媒体追加 -->
 <div class="modal" id="modal-add-media">
-  <div class="modal-inner">
+  <div class="modal-inner" style="max-width:480px">
     <button class="modal-close" onclick="closeModal('modal-add-media')">✕</button>
-    <div class="modal-ttl">＋ 媒体追加</div>
-    <div class="ff" style="margin-bottom:1rem"><label>媒体名</label><input type="text" id="nm-name" placeholder="例: バイトル"></div>
-    <div class="ff" style="margin-bottom:1rem"><label>必須媒体</label>
-      <select id="nm-required"><option value="0">通常</option><option value="1">必須</option></select>
+    <div class="modal-ttl">📣 媒体管理</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:.75rem">削除すると関連する原稿データもすべて削除されます</div>
+
+    <!-- 既存媒体一覧 -->
+    <div id="media-list" style="margin-bottom:1rem;max-height:240px;overflow-y:auto;border:.5px solid var(--b2);border-radius:var(--rs)"></div>
+
+    <!-- 新規追加 -->
+    <div style="font-size:11px;font-weight:700;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">＋ 新規追加</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.75rem">
+      <div class="ff"><label>媒体名</label><input type="text" id="nm-name" placeholder="例: バイトル"></div>
+      <div class="ff"><label>必須媒体</label>
+        <select id="nm-required"><option value="0">通常</option><option value="1">必須</option></select>
+      </div>
     </div>
     <button class="btn btn-a" style="width:100%;padding:10px" onclick="addMedia()">✅ 追加</button>
   </div>
@@ -904,7 +922,65 @@ function exportCSV(){
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
 // MODAL
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-function openModal(id){ document.getElementById(id).classList.add('open'); }
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='modal-add-branch') renderBranchList();
+  if(id==='modal-add-media')  renderMediaList();
+}
+
+function renderBranchList(){
+  const el = document.getElementById('branch-list');
+  if(!el) return;
+  if(D.branches.length===0){ el.innerHTML='<div style="padding:.75rem;font-size:12px;color:var(--t3)">拠点がありません</div>'; return; }
+  el.innerHTML = D.branches.map(b=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:.5px solid var(--bd)">
+      <div>
+        <span style="font-size:13px;font-weight:600">${b.name}</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:6px">${b.area}</span>
+      </div>
+      <button class="btn btn-r" style="padding:3px 10px;font-size:11px" onclick="deleteBranch('${b.id}')">削除</button>
+    </div>`).join('');
+}
+
+function renderMediaList(){
+  const el = document.getElementById('media-list');
+  if(!el) return;
+  if(D.medias.length===0){ el.innerHTML='<div style="padding:.75rem;font-size:12px;color:var(--t3)">媒体がありません</div>'; return; }
+  el.innerHTML = D.medias.map(m=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:.5px solid var(--bd)">
+      <div>
+        <span style="font-size:13px;font-weight:600">${m.name}</span>
+        ${m.required?'<span style="font-size:9px;background:var(--rl);color:#7f1d1d;padding:1px 6px;border-radius:10px;margin-left:6px">必須</span>':''}
+      </div>
+      <button class="btn btn-r" style="padding:3px 10px;font-size:11px" onclick="deleteMedia('${m.id}')">削除</button>
+    </div>`).join('');
+}
+
+function deleteBranch(id){
+  const b = D.branches.find(b=>b.id===id);
+  if(!b) return;
+  const listingCount = D.listings.filter(l=>l.branchId===id).length;
+  const msg = listingCount>0
+    ? `「${b.name}」を削除します。\n関連する原稿データ ${listingCount}件も削除されます。\nよろしいですか？`
+    : `「${b.name}」を削除しますか？`;
+  if(!confirm(msg)) return;
+  D.branches = D.branches.filter(b=>b.id!==id);
+  D.listings = D.listings.filter(l=>l.branchId!==id);
+  save(); buildSelects(); renderBranchList(); renderMatrix();
+}
+
+function deleteMedia(id){
+  const m = D.medias.find(m=>m.id===id);
+  if(!m) return;
+  const listingCount = D.listings.filter(l=>l.mediaId===id).length;
+  const msg = listingCount>0
+    ? `「${m.name}」を削除します。\n関連する原稿データ ${listingCount}件も削除されます。\nよろしいですか？`
+    : `「${m.name}」を削除しますか？`;
+  if(!confirm(msg)) return;
+  D.medias = D.medias.filter(m=>m.id!==id);
+  D.listings = D.listings.filter(l=>l.mediaId!==id);
+  save(); buildSelects(); renderMediaList(); renderMatrix();
+}
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.addEventListener('click', e=>{
   if(e.target.classList.contains('modal')) e.target.classList.remove('open');
