@@ -872,20 +872,52 @@ function renderSummary(){
 
   // 要対応一覧
   const actions = [];
-  D.branches.forEach(b=>{
-    D.jobs.forEach(j=>{
-      const ls = D.listings.filter(l=>l.branchId===b.id&&l.jobId===j.id);
-      const onCount = ls.filter(l=>l.status==='on').length;
-      const badges = getFocusBadges(b.name, j.id);
-      const isKyugi = badges.includes('b-kyugi');
-      const requiredMissing = D.medias.filter(m=>m.required&&!ls.find(l=>l.mediaId===m.id&&l.status==='on')).map(m=>m.name);
-      const stale = ls.filter(l=>l.updatedDate&&daysSince(l.updatedDate)>30);
 
-      if(isKyugi && onCount<2) actions.push({b:b.name,j:j.name,reason:`急ぎ注力なのに掲載数${onCount}件`,severity:'danger'});
-      if(requiredMissing.length>0) actions.push({b:b.name,j:j.name,reason:`必須媒体未掲載: ${requiredMissing.join(', ')}`,severity:'danger'});
-      stale.forEach(l=>{
-        const m=D.medias.find(m=>m.id===l.mediaId);
-        actions.push({b:b.name,j:j.name,reason:`${m?.name}の原稿が${daysSince(l.updatedDate)}日未更新`,severity:'warn'});
+  // 必須チェック対象媒体（AirWORK/Indeed と ジョブメドレー）
+  const REQUIRED_MEDIA_NAMES = ['AirWORK/Indeed', 'ジョブメドレー'];
+  const requiredMedias = D.medias.filter(m => REQUIRED_MEDIA_NAMES.includes(m.name));
+
+  // 注力ログに登録されている拠点×職種を対象にチェック
+  D.logs.forEach(lg => {
+    if (lg.status === '完了') return; // 完了済みは除外
+
+    const job = D.jobs.find(j => j.id === lg.jobId);
+    const bList = lg.branches.split(',').map(s => s.trim()).filter(Boolean);
+
+    bList.forEach(bName => {
+      // 拠点名の部分一致で検索（例: "鶴舞" → "A-Smile鶴舞"）
+      const branch = D.branches.find(b =>
+        b.name === bName ||
+        b.name.includes(bName) ||
+        bName.includes(b.name.replace('A-Smile','').trim())
+      );
+      if (!branch) return;
+
+      const ls = D.listings.filter(l => l.branchId === branch.id && l.jobId === lg.jobId);
+
+      // AirWORK/Indeed・ジョブメドレーの掲載チェック
+      requiredMedias.forEach(media => {
+        const isOn = ls.find(l => l.mediaId === media.id && l.status === 'on');
+        if (!isOn) {
+          const priorityLabel = lg.priority === '急ぎ' ? '🔴 急ぎ注力' : '🟡 注力';
+          actions.push({
+            b: branch.name,
+            j: job?.name || '職種未設定',
+            reason: `${priorityLabel}なのに ${media.name} 未掲載`,
+            severity: lg.priority === '急ぎ' ? 'danger' : 'warn',
+          });
+        }
+      });
+    });
+  });
+
+  // 更新期限超過（既存のアラート）
+  D.branches.forEach(b => {
+    D.jobs.forEach(j => {
+      const ls = D.listings.filter(l => l.branchId === b.id && l.jobId === j.id);
+      ls.filter(l => l.updatedDate && daysSince(l.updatedDate) > 30).forEach(l => {
+        const m = D.medias.find(m => m.id === l.mediaId);
+        actions.push({b: b.name, j: j.name, reason: `${m?.name}の原稿が${daysSince(l.updatedDate)}日未更新`, severity: 'warn'});
       });
     });
   });
@@ -894,6 +926,8 @@ function renderSummary(){
     document.getElementById('action-required').innerHTML='<div style="color:var(--t3);font-size:13px;padding:1rem">要対応項目はありません</div>';
   } else {
     let aHtml='<table class="matrix" style="position:static;width:100%"><thead><tr><th style="text-align:left;position:static">拠点</th><th style="text-align:left;position:static">職種</th><th style="text-align:left;position:static">内容</th></tr></thead><tbody>';
+    // 急ぎを上に表示
+    actions.sort((a,b) => a.severity==='danger'&&b.severity!=='danger' ? -1 : 1);
     actions.forEach(a=>{
       aHtml+=`<tr style="background:${a.severity==='danger'?'#fff5f5':'#fffbeb'}"><td>${a.b}</td><td>${a.j}</td><td class="${a.severity==='danger'?'neg':'wrn'}">${a.reason}</td></tr>`;
     });
