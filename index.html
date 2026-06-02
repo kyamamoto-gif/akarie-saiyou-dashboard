@@ -612,6 +612,15 @@ function renderMonthly(){
 
   const totalMediaApps = Object.values(appMedia).reduce((s,m)=>s+(m.apps||0),0)||1;
 
+  // ── グラフ（月タブ連動）
+  const branchesM = ap ? Object.entries(ap.branches).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)) : [];
+  const monthRowsM = ap ? ap.monthRows : MY.map((ym2,i)=>({ym:ym2,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
+  const mdsM = rp ? Object.entries(rp.media||{}).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
+  const byMediaM = isAll
+    ? (APP_DATA?.byMedia || {})
+    : (APP_DATA?.monthlyMedia?.[ym] || {});
+  renderCharts(monthRowsM, areaEntries.map(([n,a])=>[n,a]), branchesM, mdsM, monthCost, 0, 0, {}, byMediaM);
+
   G('md-tbl').innerHTML=`<table class="tbl">
     <tr>
       <th style="text-align:left">媒体</th>
@@ -906,12 +915,10 @@ function renderAll(){
 
   // ── グラフ
   const branches = ap ? Object.entries(ap.branches).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)) : [];
-  const monthRows = ap ? ap.monthRows : MY.map((ym,i)=>({ym,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
+  const monthRows = ap ? ap.monthRows : MY.map((ym2,i)=>({ym:ym2,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
   const mds = rp ? Object.entries(rp.media||{}).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
-  const byMedia = isAll
-    ? (APP_DATA?.byMedia || {})
-    : (APP_DATA?.monthlyMedia?.[ym] || {});
-  renderCharts(monthRows, areas, branches, mds, totalCost, m, f, ages, byMedia);
+  const byMediaAll = APP_DATA?.byMedia || {};
+  renderCharts(monthRows, areas, branches, mds, totalCost, m, f, ages, byMediaAll);
   calcSim(appUnit);
 }
 
