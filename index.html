@@ -263,13 +263,16 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
   </div>
 </div>
 
-<!-- 実績報告KPI -->
+<!-- 媒体別分析 -->
 <div class="sec">
-  <div class="sec-ttl">💴 採用コスト・媒体別（実績報告シートより）</div>
-  <div class="g2">
-    <div class="card" id="cost-card"><div class="loading"><div class="spinner"></div></div></div>
-    <div class="card" style="overflow-x:auto"><div id="md-tbl"></div></div>
-  </div>
+  <div class="sec-ttl">📣 媒体別分析（応募者管理＋実績報告シートより）</div>
+  <div class="card" style="overflow-x:auto"><div id="md-tbl"></div></div>
+</div>
+
+<!-- 採用コスト -->
+<div class="sec g2">
+  <div><div class="sec-ttl">💴 採用コスト</div><div class="card" id="cost-card"><div class="loading"><div class="spinner"></div></div></div></div>
+  <div><div class="sec-ttl">💴 媒体別費用</div><div class="card" style="overflow-x:auto"><div id="cost-media-tbl"></div></div></div>
 </div>
 
 <!-- グラフ -->
@@ -283,6 +286,10 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
       <div class="cp" id="cp-3"><div class="leg"><span class="leg-i"><span class="leg-d" style="background:#2563eb"></span>応募数</span><span class="leg-i"><span class="leg-d" style="background:#dc2626"></span>入社数</span></div><div id="c3w" class="cw"><canvas id="c3"></canvas></div></div>
       <div class="cp" id="cp-4"><div class="leg"><span class="leg-i"><span class="leg-d" style="background:#2563eb"></span>費用</span></div><div id="c4w" class="cw"><canvas id="c4"></canvas></div></div>
       <div class="cp" id="cp-5"><div class="cw" style="height:240px"><canvas id="c5"></canvas></div></div>
+      <div class="cp" id="cp-6">
+        <div class="leg"><span class="leg-i"><span class="leg-d" style="background:#2563eb"></span>応募数</span><span class="leg-i"><span class="leg-d" style="background:#16a34a"></span>面接数</span><span class="leg-i"><span class="leg-d" style="background:#f59e0b"></span>内定数</span><span class="leg-i"><span class="leg-d" style="background:#dc2626"></span>入社数</span></div>
+        <div id="c6w" class="cw"><canvas id="c6"></canvas></div>
+      </div>
     </div>
   </div>
 </div>
@@ -590,7 +597,63 @@ function renderMonthly(){
     <div class="ir"><span class="ir-k">採用単価</span><span class="ir-v ${monthHireUnit>200000?'neg':''}">${monthHireUnit?fmtY(monthHireUnit):'-'}</span></div>
     ${isAll?`<div class="ir"><span class="ir-k">応募単価</span><span class="ir-v">${fmtY(rp?.appUnit||CFG.appUnitLY)}</span></div>`:''}`;
 
+  // ── 媒体別分析（応募者管理シートのbyMediaを使用）
+  const appMedia = APP_DATA?.byMedia || {};
+  const allMediaNames = [...new Set([
+    ...Object.keys(appMedia),
+    ...mds.map(([n])=>n)
+  ])].sort((a,b)=>((appMedia[b]?.apps||0)-(appMedia[a]?.apps||0)));
+
+  const totalMediaApps = Object.values(appMedia).reduce((s,m)=>s+(m.apps||0),0)||1;
+
   G('md-tbl').innerHTML=`<table class="tbl">
+    <tr>
+      <th style="text-align:left">媒体</th>
+      <th>応募数</th><th>応募割合</th>
+      <th>面接数</th><th>面接率</th>
+      <th>内定数</th><th>内定率</th>
+      <th>入社数</th><th>採用率</th>
+      <th>採用コスト</th><th>採用単価</th>
+    </tr>
+    ${allMediaNames.map(name=>{
+      const am = appMedia[name] || {};
+      const rptM = rp ? Object.entries(rp.media||{}).find(([n])=>n===name) : null;
+      const cost = rptM ? rptM[1].cost : 0;
+      const apps       = am.apps        || 0;
+      const interviews = am.interviews  || 0;
+      const offers     = am.offers      || 0;
+      const joins      = am.joins       || 0;
+      const hpu = joins>0&&cost>0 ? Math.round(cost/joins) : 0;
+      return `<tr>
+        <td>${name}</td>
+        <td>${apps||'-'}</td>
+        <td>${pct(apps,totalMediaApps)}%</td>
+        <td>${interviews||'-'}</td>
+        <td class="${pct(interviews,apps||1)<20?'neg':''}">${apps?pct(interviews,apps)+'%':'-'}</td>
+        <td>${offers||'-'}</td>
+        <td>${apps?pct(offers,apps)+'%':'-'}</td>
+        <td>${joins||'-'}</td>
+        <td class="${pct(joins,apps||1)<5&&apps>0?'neg':'pos'}">${apps?pct(joins,apps)+'%':'-'}</td>
+        <td>${cost?fmtYK(cost):'-'}</td>
+        <td class="${hpu>200000?'neg':''}">${hpu?fmtY(hpu):'-'}</td>
+      </tr>`;
+    }).join('')}
+    <tr class="total">
+      <td>合計</td>
+      <td>${fmt(totalMediaApps)}</td><td>100%</td>
+      <td>${fmt(Object.values(appMedia).reduce((s,m)=>s+(m.interviews||0),0))}</td>
+      <td>${pct(Object.values(appMedia).reduce((s,m)=>s+(m.interviews||0),0),totalMediaApps)}%</td>
+      <td>${Object.values(appMedia).reduce((s,m)=>s+(m.offers||0),0)}</td>
+      <td>${pct(Object.values(appMedia).reduce((s,m)=>s+(m.offers||0),0),totalMediaApps)}%</td>
+      <td>${Object.values(appMedia).reduce((s,m)=>s+(m.joins||0),0)}</td>
+      <td>${pct(Object.values(appMedia).reduce((s,m)=>s+(m.joins||0),0),totalMediaApps)}%</td>
+      <td>${fmtYK(mds.reduce((s,[,m])=>s+m.cost,0))}</td>
+      <td>-</td>
+    </tr>
+  </table>`;
+
+  // 媒体別費用テーブル（実績報告シートより）
+  G('cost-media-tbl').innerHTML=`<table class="tbl">
     <tr><th style="text-align:left">媒体</th><th>採用コスト</th><th>割合</th></tr>
     ${mds.map(([n,m])=>`<tr><td>${n}</td><td>${fmtYK(m.cost)}</td><td>${pct(m.cost,rp?.totalCost||1)}%</td></tr>`).join('')}
     ${mds.length>1?`<tr class="total"><td>合計</td><td>${fmtYK(mds.reduce((s,[,m])=>s+m.cost,0))}</td><td>100%</td></tr>`:''}
@@ -839,7 +902,8 @@ function renderAll(){
   const branches = ap ? Object.entries(ap.branches).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)) : [];
   const monthRows = ap ? ap.monthRows : MY.map((ym,i)=>({ym,label:ML[i],apps:0,interviews:0,offers:0,offerDeclines:0,joins:0}));
   const mds = rp ? Object.entries(rp.media||{}).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
-  renderCharts(monthRows, areas, branches, mds, totalCost, m, f, ages);
+  const byMedia = APP_DATA?.byMedia || {};
+  renderCharts(monthRows, areas, branches, mds, totalCost, m, f, ages, byMedia);
   calcSim(appUnit);
 }
 
@@ -855,7 +919,8 @@ function renderGenderBar(m,f){
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CHARTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-function renderCharts(monthRows, areas, branches, mds, totalCost, gMale, gFemale, ages){
+function renderCharts(monthRows, areas, branches, mds, totalCost, gMale, gFemale, ages, byMedia){
+  byMedia = byMedia || {};
   const dst=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
   const co=()=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}});
   const lbs=monthRows.map(m=>m.label);
@@ -892,6 +957,20 @@ function renderCharts(monthRows, areas, branches, mds, totalCost, gMale, gFemale
   const agK=[10,20,30,40,50,60,70]; const agL=['10代','20代','30代','40代','50代','60代','70代'];
   const agData=agK.map(k=>ages[k]||0);
   dst('c5'); charts['c5']=new Chart(G('c5'),{type:'doughnut',data:{labels:agL,datasets:[{data:agData,backgroundColor:['#6366f1','#3b82f6','#06b6d4','#10b981','#f59e0b','#f97316','#ef4444']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}}}});
+
+  // C6: 媒体別応募/面接/内定/入社
+  const mediaEntries = Object.entries(byMedia).sort((a,b)=>(b[1].apps||0)-(a[1].apps||0)).slice(0,10);
+  const c6h = Math.max(mediaEntries.length*42+60, 160);
+  G('c6w').style.height = c6h+'px';
+  dst('c6'); charts['c6']=new Chart(G('c6'),{type:'bar',data:{
+    labels: mediaEntries.map(([n])=>n),
+    datasets:[
+      {label:'応募数', data:mediaEntries.map(([,m])=>m.apps||0),     backgroundColor:'#bfdbfe'},
+      {label:'面接数', data:mediaEntries.map(([,m])=>m.interviews||0),backgroundColor:'#16a34a'},
+      {label:'内定数', data:mediaEntries.map(([,m])=>m.offers||0),   backgroundColor:'#f59e0b'},
+      {label:'入社数', data:mediaEntries.map(([,m])=>m.joins||0),    backgroundColor:'#dc2626'},
+    ]
+  },options:{...co(),indexAxis:'y',plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:10}}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}});
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -917,7 +996,7 @@ function calcSim(au){
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CHART TABS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-[{i:'1',l:'月別ファネル推移'},{i:'2',l:'月別性別推移'},{i:'3',l:'拠点別応募/入社'},{i:'4',l:'媒体別費用'},{i:'5',l:'年代別（円グラフ）'}].forEach(t=>{
+[{i:'1',l:'月別ファネル推移'},{i:'2',l:'月別性別推移'},{i:'3',l:'拠点別応募/入社'},{i:'4',l:'媒体別費用'},{i:'5',l:'年代別（円グラフ）'},{i:'6',l:'媒体別応募/採用'}].forEach(t=>{
   const b=document.createElement('button'); b.className='tab'+(t.i==='1'?' active':''); b.textContent=t.l;
   b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.cp').forEach(x=>x.classList.remove('active'));b.classList.add('active');G('cp-'+t.i).classList.add('active');};
   G('ch-tabs').appendChild(b);
