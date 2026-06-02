@@ -439,9 +439,12 @@ async function fetchAll(){
 
 async function fetchGAS(url, label){
   if(!url) throw new Error(label+': URL未設定');
-  const res = await fetch(url);
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(url + sep + 'key=akarie2026');
   if(!res.ok) throw new Error(label+`: HTTP ${res.status}`);
-  return res.json();
+  const data = await res.json();
+  if(data.error === 'unauthorized') throw new Error(label+': 認証エラー（パスワード不一致）');
+  return data;
 }
 
 function setBadge(msg,cls){
