@@ -433,6 +433,7 @@ async function fetchAll(){
     else addBadgeErr('実績報告: '+rptRes.reason);
 
     saveCache();
+    updateHdDate();
     const now=new Date().toLocaleString('ja-JP');
     G('st-bar').classList.add('show');
     G('st-txt').textContent=`最終更新: ${now}`;
@@ -628,17 +629,22 @@ function renderMonthly(){
       <th>面接数</th><th>面接率</th>
       <th>内定数</th><th>内定率</th>
       <th>入社数</th><th>採用率</th>
-      <th>採用コスト</th><th>採用単価</th>
+      <th>採用コスト</th><th>応募単価</th><th>採用単価</th>
     </tr>
     ${allMediaNames.map(name=>{
       const am = appMedia[name] || {};
-      const rptM = rp ? Object.entries(rp.media||{}).find(([n])=>n===name) : null;
-      const cost = rptM ? rptM[1].cost : 0;
-      const apps       = am.apps        || 0;
+      const rptM = rp ? rp.media[name] : null;
+      const cost        = rptM?.cost     || 0;
+      const rptApps     = rptM?.apps     || 0;
+      const rptHired    = rptM?.hired    || 0;
+      const rptHireUnit = rptM?.hireUnit || 0;
+      const rptAppUnit  = rptM?.appUnit  || 0;
+      const apps       = (am.apps       || 0) || rptApps;
       const interviews = am.interviews  || 0;
       const offers     = am.offers      || 0;
-      const joins      = am.joins       || 0;
-      const hpu = joins>0&&cost>0 ? Math.round(cost/joins) : 0;
+      const joins      = am.joins       || rptHired || 0;
+      const hpu = rptHireUnit || (joins>0&&cost>0 ? Math.round(cost/joins) : 0);
+      const apu = rptAppUnit  || (apps>0&&cost>0  ? Math.round(cost/apps)  : 0);
       return `<tr>
         <td>${name}</td>
         <td>${apps||'-'}</td>
@@ -650,6 +656,7 @@ function renderMonthly(){
         <td>${joins||'-'}</td>
         <td class="${pct(joins,apps||1)<5&&apps>0?'neg':'pos'}">${apps?pct(joins,apps)+'%':'-'}</td>
         <td>${cost?fmtYK(cost):'-'}</td>
+        <td>${apu?fmtY(apu):'-'}</td>
         <td class="${hpu>200000?'neg':''}">${hpu?fmtY(hpu):'-'}</td>
       </tr>`;
     }).join('')}
@@ -662,8 +669,8 @@ function renderMonthly(){
       <td>${pct(Object.values(appMedia).reduce((s,m)=>s+(m.offers||0),0),totalMediaApps)}%</td>
       <td>${Object.values(appMedia).reduce((s,m)=>s+(m.joins||0),0)}</td>
       <td>${pct(Object.values(appMedia).reduce((s,m)=>s+(m.joins||0),0),totalMediaApps)}%</td>
-      <td>${fmtYK(mds.reduce((s,[,m])=>s+m.cost,0))}</td>
-      <td>-</td>
+      <td>${fmtYK(mds.reduce((s,[,m])=>s+(m.cost||0),0))}</td>
+      <td>-</td><td>${fmtY(rp?.hireUnit||0)}</td>
     </tr>
   </table>`;
 
@@ -768,8 +775,9 @@ function computeFromApp(){
 
 function computeFromRpt(){
   if(!RPT_DATA) return null;
-  const months = RPT_DATA.months || {};
-  const media  = RPT_DATA.media  || {};
+  const months      = RPT_DATA.months      || {};
+  const media       = RPT_DATA.media       || {};
+  const mediaDetail = RPT_DATA.mediaDetail || {};  // 🆕媒体別シートからの詳細データ
 
   // 今期月分のみ集計
   let totalCost=0, totalApps=0, totalHired=0, totalOffers=0;
@@ -788,7 +796,30 @@ function computeFromRpt(){
     if(m.hireUnit>0) hireUnit=m.hireUnit;
   });
 
-  return { totalCost, totalApps, totalHired, totalOffers, appUnit, hireUnit, monthCosts, media };
+  // mediaDetailがあればそちらを優先（費用・応募・入社・採用単価が正確）
+  // なければmedia（費用のみ）にフォールバック
+  const mediaFinal = {};
+  const allMediaNames = new Set([...Object.keys(mediaDetail), ...Object.keys(media)]);
+  allMediaNames.forEach(name => {
+    const d = mediaDetail[name];
+    const m2 = media[name];
+    if(d) {
+      mediaFinal[name] = {
+        cost:     d.cost     || 0,
+        apps:     d.apps     || 0,
+        hired:    d.hired    || 0,
+        hires:    d.hires    || 0,
+        offers:   d.offers   || 0,
+        declines: d.declines || 0,
+        appUnit:  d.appUnit  || 0,
+        hireUnit: d.hireUnit || 0,
+      };
+    } else if(m2) {
+      mediaFinal[name] = { cost: m2.cost||0, apps:0, hired:0, hires:0, offers:0, declines:0, appUnit:0, hireUnit:0 };
+    }
+  });
+
+  return { totalCost, totalApps, totalHired, totalOffers, appUnit, hireUnit, monthCosts, media: mediaFinal };
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1279,19 +1310,30 @@ function toggleGas(){
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
 // INIT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-G('hd-date').textContent = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})+' 時点';
+function updateHdDate(){
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'});
+  const timeStr = now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  G('hd-date').textContent = `${dateStr} ${timeStr} ／ 10分おきに自動更新`;
+}
+
 loadCfg();
+updateHdDate();
+
 const hasCached = loadCache();
 if(hasCached){
   G('st-bar').classList.add('show');
-  G('st-txt').textContent = 'キャッシュデータを読み込みました（「🔄 今すぐ更新」で最新化）';
+  G('st-txt').textContent = 'キャッシュデータを読み込みました';
   renderAll();
-} else {
-  // 初回はURLが設定されているので自動取得
-  fetchAll();
 }
+// 初回は必ずGASから取得
+fetchAll();
+
+// 10分おきに自動更新
+setInterval(()=>{ fetchAll(); }, 10 * 60 * 1000);
 </script>
 </body>
 </html>
