@@ -262,6 +262,12 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
   </div>
 </div>
 
+<!-- 職種別 -->
+<div class="sec">
+  <div class="sec-ttl">💼 職種別KPI（応募月ベース・月タブ連動）</div>
+  <div class="card" style="overflow-x:auto"><div id="job-tbl"></div></div>
+</div>
+
 <!-- 媒体別分析 -->
 <div class="sec">
   <div class="sec-ttl">📣 媒体別分析（応募者管理＋実績報告シートより）</div>
@@ -597,7 +603,52 @@ function renderMonthly(){
     <div class="ir"><span class="ir-k">採用単価</span><span class="ir-v ${monthHireUnit>200000?'neg':''}">${monthHireUnit?fmtY(monthHireUnit):'-'}</span></div>
     ${isAll?`<div class="ir"><span class="ir-k">応募単価</span><span class="ir-v">${fmtY(rp?.appUnit||CFG.appUnitLY)}</span></div>`:''}`;
 
-  // ── 媒体別分析（月タブ連動）
+  // ── 職種別KPI（月タブ連動）
+  const jobData = isAll
+    ? (APP_DATA?.byJob || {})
+    : (APP_DATA?.monthlyJob?.[ym] || {});
+
+  const JOB_ORDER = ['サ責','ヘルパー（正社員）','ヘルパー（非常勤）','事業管理','ケアマネージャー','その他'];
+  const jobEntries = JOB_ORDER
+    .filter(j => jobData[j])
+    .map(j => [j, jobData[j]])
+    .concat(Object.entries(jobData).filter(([j]) => !JOB_ORDER.includes(j)));
+
+  const totalJobApps = jobEntries.reduce((s,[,j])=>s+(j.apps||0),0)||1;
+
+  G('job-tbl').innerHTML = jobEntries.length ? `<table class="tbl">
+    <tr>
+      <th style="text-align:left">職種</th>
+      <th>応募数</th><th>応募割合</th>
+      <th>面接数</th><th>面接率</th>
+      <th>内定数</th><th>内定率</th>
+      <th>内定辞退</th>
+      <th>入社数</th><th>採用率</th>
+    </tr>
+    ${jobEntries.map(([name,j])=>`<tr>
+      <td>${name}</td>
+      <td>${j.apps||'-'}</td>
+      <td>${pct(j.apps,totalJobApps)}%</td>
+      <td>${j.interviews||'-'}</td>
+      <td class="${pct(j.interviews,j.apps||1)<20?'neg':''}">${j.apps?pct(j.interviews,j.apps)+'%':'-'}</td>
+      <td>${j.offers||'-'}</td>
+      <td>${j.apps?pct(j.offers,j.apps)+'%':'-'}</td>
+      <td class="${(j.offerDeclines||0)>0?'neg':''}">${j.offerDeclines||'-'}</td>
+      <td>${j.joins||'-'}</td>
+      <td class="${pct(j.joins,j.apps||1)<5&&j.apps>0?'neg':'pos'}">${j.apps?pct(j.joins,j.apps)+'%':'-'}</td>
+    </tr>`).join('')}
+    <tr class="total">
+      <td>合計</td>
+      <td>${fmt(totalJobApps)}</td><td>100%</td>
+      <td>${fmt(jobEntries.reduce((s,[,j])=>s+(j.interviews||0),0))}</td>
+      <td>${pct(jobEntries.reduce((s,[,j])=>s+(j.interviews||0),0),totalJobApps)}%</td>
+      <td>${jobEntries.reduce((s,[,j])=>s+(j.offers||0),0)}</td>
+      <td>${pct(jobEntries.reduce((s,[,j])=>s+(j.offers||0),0),totalJobApps)}%</td>
+      <td class="${jobEntries.reduce((s,[,j])=>s+(j.offerDeclines||0),0)>0?'neg':''}">${jobEntries.reduce((s,[,j])=>s+(j.offerDeclines||0),0)||'-'}</td>
+      <td>${jobEntries.reduce((s,[,j])=>s+(j.joins||0),0)}</td>
+      <td>${pct(jobEntries.reduce((s,[,j])=>s+(j.joins||0),0),totalJobApps)}%</td>
+    </tr>
+  </table>` : '<div style="color:var(--t3);font-size:13px">データがありません</div>';
   const appMedia = isAll
     ? (APP_DATA?.byMedia || {})
     : (APP_DATA?.monthlyMedia?.[ym] || {});
