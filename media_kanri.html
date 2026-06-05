@@ -464,7 +464,7 @@ const DEFAULT = {
   ],
 };
 
-const GAS_MEDIA_URL = 'https://script.google.com/macros/s/AKfycbzDwgq1Kmbfi3vwfrF9T4UBWPYKzE7Z_AJs4nMXUPb96h9OsL53ietZwVledrBUcQeHzg/exec';
+const GAS_MEDIA_URL = 'https://script.google.com/macros/s/AKfycbzFuge0tssymkkH4yMC6SqzpYjJUsXzsgjVDMZ5cKnEmBw0v_ABzaX3C3JmhRoj6LgkUA/exec';
 
 const uid = () => 'id' + Date.now() + Math.random().toString(36).slice(2,6);
 const today = () => new Date().toISOString().split('T')[0];
@@ -504,36 +504,21 @@ async function loadFromGAS(){
   }
 }
 
-// ── GASにデータ保存（POST方式）
+// ── GASにデータ保存（GET方式でCORSを回避）
 async function saveToGAS(){
   if(isSaving) return;
   isSaving = true;
   showSyncStatus('💾 保存中...');
   try {
-    // localStorageにも保存（バックアップ）
     localStorage.setItem('akarie_media', JSON.stringify(D));
-    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026', {
-      method: 'POST',
-      mode: 'cors',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({data: D}),
-    });
+    const dataStr = encodeURIComponent(JSON.stringify(D));
+    const url = `${GAS_MEDIA_URL}?key=akarie2026&action=save&data=${dataStr}`;
+    const res = await fetch(url);
     const json = await res.json();
     if(json.error) showSyncStatus('❌ 保存エラー: '+json.error, true);
     else showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
   } catch(e) {
-    // CORSエラーの場合はno-corsで再試行
-    try {
-      await fetch(GAS_MEDIA_URL + '?key=akarie2026', {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({data: D}),
-      });
-      showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
-    } catch(e2) {
-      showSyncStatus('⚠️ オフライン保存のみ', true);
-    }
+    showSyncStatus('⚠️ ローカル保存のみ（通信エラー）', true);
   } finally {
     isSaving = false;
   }
