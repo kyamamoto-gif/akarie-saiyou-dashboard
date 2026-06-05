@@ -466,6 +466,10 @@ const DEFAULT = {
 
 const GAS_MEDIA_URL = 'https://script.google.com/macros/s/AKfycbyo7omMqIkkrbE0SPC0rDtclabmkC1r4-UR3PSW92UkpKKquIsgvv9j41J0OSCqlmvXXA/exec';
 
+const uid = () => 'id' + Date.now() + Math.random().toString(36).slice(2,6);
+const today = () => new Date().toISOString().split('T')[0];
+const daysSince = d => d ? Math.floor((Date.now()-new Date(d))/(86400000)) : 999;
+
 let D = JSON.parse(JSON.stringify(DEFAULT)); // 初期値はDEFAULT
 let editTarget = null;
 let isSaving = false;
@@ -535,9 +539,6 @@ document.getElementById('hd-date').textContent = new Date().toLocaleDateString('
 document.getElementById('al-updated').value = today();
 loadFromGAS();
 
-const uid = () => 'id' + Date.now() + Math.random().toString(36).slice(2,6);
-const today = () => new Date().toISOString().split('T')[0];
-const daysSince = d => d ? Math.floor((Date.now()-new Date(d))/(86400000)) : 999;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PAGE SWITCH
