@@ -148,9 +148,10 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 <div class="hd">
   <div>
     <div class="hd-title">媒体×原稿管理｜株式会社アカリエ</div>
-    <div class="hd-sub" id="hd-date"></div>
+    <div class="hd-sub"><span id="sync-status">読み込み中...</span></div>
   </div>
   <div class="hd-r">
+    <button class="btn btn-g" onclick="loadFromGAS()">🔄 最新データ取得</button>
     <button class="btn btn-g" onclick="openModal('modal-add-listing')">＋ 原稿追加</button>
     <button class="btn btn-o" onclick="openModal('modal-add-log')">＋ 注力ログ追加</button>
     <a href="index.html" class="btn btn-o">📊 KPIダッシュボード</a>
@@ -463,14 +464,76 @@ const DEFAULT = {
   ],
 };
 
-let D = loadData();
-let editTarget = null;
+const GAS_MEDIA_URL = 'https://script.google.com/macros/s/AKfycbyo7omMqIkkrbE0SPC0rDtclabmkC1r4-UR3PSW92UkpKKquIsgvv9j41J0OSCqlmvXXA/exec';
 
-function loadData(){
-  try{ const s=localStorage.getItem('akarie_media'); if(s) return JSON.parse(s); }catch(e){}
-  return JSON.parse(JSON.stringify(DEFAULT));
+let D = JSON.parse(JSON.stringify(DEFAULT)); // 初期値はDEFAULT
+let editTarget = null;
+let isSaving = false;
+
+// ── GASからデータ読み込み
+async function loadFromGAS(){
+  showSyncStatus('⏳ データ読み込み中...');
+  try {
+    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026');
+    const json = await res.json();
+    if(json.error){ showSyncStatus('❌ '+json.error, true); return; }
+    if(json.data){
+      D = json.data;
+    } else {
+      // 初回：DEFAULTデータをGASに保存
+      await saveToGAS();
+    }
+    showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
+    buildSelects();
+    renderMatrix();
+  } catch(e) {
+    showSyncStatus('❌ 読み込みエラー: '+e.message, true);
+    // エラー時はlocalStorageのデータを使う
+    try{ const s=localStorage.getItem('akarie_media'); if(s) D=JSON.parse(s); }catch(e2){}
+    buildSelects();
+    renderMatrix();
+  }
 }
-function save(){ try{localStorage.setItem('akarie_media',JSON.stringify(D));}catch(e){} }
+
+// ── GASにデータ保存
+async function saveToGAS(){
+  if(isSaving) return;
+  isSaving = true;
+  showSyncStatus('💾 保存中...');
+  try {
+    // localStorageにも保存（オフラインバックアップ）
+    localStorage.setItem('akarie_media', JSON.stringify(D));
+    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({data: D}),
+    });
+    const json = await res.json();
+    if(json.error) showSyncStatus('❌ 保存エラー: '+json.error, true);
+    else showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
+  } catch(e) {
+    showSyncStatus('⚠️ オフライン保存のみ', true);
+  } finally {
+    isSaving = false;
+  }
+}
+
+// 旧save()をGAS保存に置き換え
+function save(){ saveToGAS(); }
+
+function showSyncStatus(msg, isWarn=false){
+  let el = document.getElementById('sync-status');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.color = isWarn ? 'var(--amber)' : '#14532d';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━
+document.getElementById('hd-date').textContent = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})+' 時点';
+document.getElementById('al-updated').value = today();
+loadFromGAS();
 
 const uid = () => 'id' + Date.now() + Math.random().toString(36).slice(2,6);
 const today = () => new Date().toISOString().split('T')[0];
@@ -1021,12 +1084,7 @@ document.addEventListener('click', e=>{
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-// INIT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-document.getElementById('hd-date').textContent = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})+' 時点';
-document.getElementById('al-updated').value = today();
-buildSelects();
-renderMatrix();
 </script>
 </body>
 </html>
