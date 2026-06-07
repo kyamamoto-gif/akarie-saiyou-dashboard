@@ -503,17 +503,21 @@ async function loadFromGAS(){
   }
 }
 
-// ── GASにデータ保存（GET方式でCORSを回避）
+// ── GASにデータ保存
 async function saveToGAS(){
   if(isSaving) return;
   isSaving = true;
   showSyncStatus('💾 保存中...');
   try {
     localStorage.setItem('akarie_media', JSON.stringify(D));
-    const dataStr = encodeURIComponent(JSON.stringify(D));
-    const url = `${GAS_MEDIA_URL}?key=akarie2026&action=save&data=${dataStr}`;
-    const res = await fetch(url);
-    const json = await res.json();
+    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({data: D}),
+      redirect: 'follow',
+    });
+    const text = await res.text();
+    const json = JSON.parse(text);
     if(json.error) showSyncStatus('❌ 保存エラー: '+json.error, true);
     else showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
   } catch(e) {
