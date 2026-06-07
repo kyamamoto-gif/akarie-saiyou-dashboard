@@ -477,19 +477,14 @@ let isSaving = false;
 async function loadFromGAS(){
   showSyncStatus('⏳ データ読み込み中...');
   try {
-    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026', {
-      redirect: 'follow',
-    });
+    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026');
     const json = await res.json();
     if(json.error){ showSyncStatus('❌ '+json.error, true); return; }
     if(json.data){
       D = json.data;
       showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
     } else {
-      try{
-        const local = localStorage.getItem('akarie_media');
-        if(local){ D = JSON.parse(local); }
-      }catch(e2){}
+      try{ const local = localStorage.getItem('akarie_media'); if(local) D=JSON.parse(local); }catch(e2){}
       await saveToGAS();
     }
     buildSelects();
@@ -502,7 +497,7 @@ async function loadFromGAS(){
   }
 }
 
-// ── GASにデータ保存（チャンク分割GET方式）
+// ── GASにデータ保存（チャンク分割GET方式・preflightなし）
 async function saveToGAS(){
   if(isSaving) return;
   isSaving = true;
@@ -510,15 +505,15 @@ async function saveToGAS(){
   try {
     localStorage.setItem('akarie_media', JSON.stringify(D));
     const dataStr = JSON.stringify(D);
-    const CHUNK_SIZE = 1000; // 1000文字ずつ分割
+    const CHUNK_SIZE = 800;
     const chunks = [];
     for(let i = 0; i < dataStr.length; i += CHUNK_SIZE){
       chunks.push(dataStr.slice(i, i + CHUNK_SIZE));
     }
-    // 各チャンクを順番に送信
     for(let i = 0; i < chunks.length; i++){
+      // GETのみ・ヘッダーなし → preflightが発生しない
       const url = `${GAS_MEDIA_URL}?key=akarie2026&action=save&index=${i}&total=${chunks.length}&chunk=${encodeURIComponent(chunks[i])}`;
-      const res = await fetch(url, { redirect: 'follow' });
+      const res = await fetch(url);
       const json = await res.json();
       if(json.error){ showSyncStatus('❌ 保存エラー: '+json.error, true); return; }
     }
