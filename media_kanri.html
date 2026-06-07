@@ -477,15 +477,15 @@ let isSaving = false;
 async function loadFromGAS(){
   showSyncStatus('⏳ データ読み込み中...');
   try {
-    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026');
+    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026', {
+      redirect: 'follow',
+    });
     const json = await res.json();
     if(json.error){ showSyncStatus('❌ '+json.error, true); return; }
     if(json.data){
-      // GASにデータあり → 使用
       D = json.data;
       showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
     } else {
-      // GASにデータなし → localStorageから復元してGASに保存
       try{
         const local = localStorage.getItem('akarie_media');
         if(local){ D = JSON.parse(local); }
@@ -496,7 +496,6 @@ async function loadFromGAS(){
     renderMatrix();
   } catch(e) {
     showSyncStatus('❌ 読み込みエラー: '+e.message, true);
-    // エラー時はlocalStorageのデータを使う
     try{ const s=localStorage.getItem('akarie_media'); if(s) D=JSON.parse(s); }catch(e2){}
     buildSelects();
     renderMatrix();
@@ -519,7 +518,7 @@ async function saveToGAS(){
     // 各チャンクを順番に送信
     for(let i = 0; i < chunks.length; i++){
       const url = `${GAS_MEDIA_URL}?key=akarie2026&action=save&index=${i}&total=${chunks.length}&chunk=${encodeURIComponent(chunks[i])}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { redirect: 'follow' });
       const json = await res.json();
       if(json.error){ showSyncStatus('❌ 保存エラー: '+json.error, true); return; }
     }
