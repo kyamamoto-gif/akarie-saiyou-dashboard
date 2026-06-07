@@ -503,23 +503,27 @@ async function loadFromGAS(){
   }
 }
 
-// ── GASにデータ保存
+// ── GASにデータ保存（チャンク分割GET方式）
 async function saveToGAS(){
   if(isSaving) return;
   isSaving = true;
   showSyncStatus('💾 保存中...');
   try {
     localStorage.setItem('akarie_media', JSON.stringify(D));
-    const res = await fetch(GAS_MEDIA_URL + '?key=akarie2026', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({data: D}),
-      redirect: 'follow',
-    });
-    const text = await res.text();
-    const json = JSON.parse(text);
-    if(json.error) showSyncStatus('❌ 保存エラー: '+json.error, true);
-    else showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
+    const dataStr = JSON.stringify(D);
+    const CHUNK_SIZE = 1000; // 1000文字ずつ分割
+    const chunks = [];
+    for(let i = 0; i < dataStr.length; i += CHUNK_SIZE){
+      chunks.push(dataStr.slice(i, i + CHUNK_SIZE));
+    }
+    // 各チャンクを順番に送信
+    for(let i = 0; i < chunks.length; i++){
+      const url = `${GAS_MEDIA_URL}?key=akarie2026&action=save&index=${i}&total=${chunks.length}&chunk=${encodeURIComponent(chunks[i])}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      if(json.error){ showSyncStatus('❌ 保存エラー: '+json.error, true); return; }
+    }
+    showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
   } catch(e) {
     showSyncStatus('⚠️ ローカル保存のみ（通信エラー）', true);
   } finally {
