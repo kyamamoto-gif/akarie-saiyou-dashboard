@@ -538,7 +538,7 @@ function showSyncStatus(msg, isWarn=false){
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
 // INIT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
-document.getElementById('hd-date').textContent = new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric'})+' 時点';
+// 日付はsync-statusと共存させる
 document.getElementById('al-updated').value = today();
 loadFromGAS();
 
