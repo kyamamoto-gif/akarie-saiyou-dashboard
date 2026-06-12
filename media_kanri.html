@@ -6,22 +6,22 @@
 <title>媒体×原稿管理｜株式会社アカリエ</title>
 <style>
 :root{
-  --bg:#f5f4f0;--sur:#fff;--s2:#f0efe9;--bd:rgba(0,0,0,.08);--b2:rgba(0,0,0,.14);
-  --tx:#1a1a18;--t2:#5a5a56;--t3:#9a9a94;
-  --blue:#2563eb;--bl:#dbeafe;--green:#16a34a;--gl:#dcfce7;
+  --bg:#faf5ef;--sur:#fff;--s2:#faece0;--bd:rgba(120,60,30,.10);--b2:rgba(120,60,30,.18);
+  --tx:#332e2a;--t2:#57534e;--t3:#a39c95;
+  --blue:#2563eb;--bl:#ffe9dc;--green:#16a34a;--gl:#dcfce7;
   --red:#dc2626;--rl:#fee2e2;--amber:#d97706;--al:#fef3c7;
   --purple:#7c3aed;--pl:#ede9fe;
-  --acc:#1e3a5f;--r:10px;--rs:6px;
+  --acc:#e5562b;--r:10px;--rs:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
 
 /* HEADER */
-.hd{background:var(--acc);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.hd{background:linear-gradient(135deg,#e60012 0%,#ff7f50 100%);color:#fff;padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
 .hd-title{font-size:17px;font-weight:700}.hd-sub{font-size:11px;opacity:.6;margin-top:1px}
 .hd-r{display:flex;gap:6px;flex-wrap:wrap}
 .btn{padding:6px 14px;border-radius:var(--rs);border:none;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;white-space:nowrap;transition:opacity .15s}.btn:hover{opacity:.85}
-.btn-w{background:#fff;color:var(--acc)}.btn-o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}.btn-g{background:#16a34a;color:#fff}.btn-a{background:var(--acc);color:#fff}.btn-r{background:var(--red);color:#fff}
+.btn-w{background:#fff;color:#e60012}.btn-o{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}.btn-g{background:#16a34a;color:#fff}.btn-a{background:var(--acc);color:#fff}.btn-r{background:var(--red);color:#fff}
 
 /* NAV TABS */
 .nav{background:var(--sur);border-bottom:.5px solid var(--b2);padding:0 1.5rem;display:flex;gap:0}
@@ -52,7 +52,7 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 .alert-card{border-radius:var(--rs);padding:.7rem 1rem;display:flex;align-items:flex-start;gap:8px;font-size:12px}
 .alert-card.danger{background:var(--rl);color:#7f1d1d}
 .alert-card.warn{background:var(--al);color:#78350f}
-.alert-card.info{background:var(--bl);color:#1e40af}
+.alert-card.info{background:var(--bl);color:#c2410c}
 .alert-card .ai{font-size:14px;flex-shrink:0}
 
 /* MATRIX TABLE */
@@ -64,15 +64,15 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 .matrix td{padding:5px 8px;border-bottom:.5px solid var(--bd);border-right:.5px solid var(--bd);text-align:center;vertical-align:middle}
 .matrix td:first-child{text-align:left;font-weight:600;background:var(--sur);position:sticky;left:0;z-index:5;border-right:.5px solid var(--b2)}
 .matrix td:nth-child(2){text-align:left;background:var(--s2);position:sticky;left:100px;z-index:5;border-right:.5px solid var(--b2)}
-.matrix tr:hover td{background:#f8f7f3}
-.matrix tr:hover td:first-child,.matrix tr:hover td:nth-child(2){background:#eeecea}
+.matrix tr:hover td{background:#faf3ec}
+.matrix tr:hover td:first-child,.matrix tr:hover td:nth-child(2){background:#f3e7da}
 .matrix td:first-child,.matrix td:nth-child(2){z-index:5}
 
 /* CELL STATES */
 .cell-on{background:var(--gl);color:#14532d;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:none;font-family:inherit}
 .cell-on:hover{background:#bbf7d0}
 .cell-off{background:var(--s2);color:var(--t3);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:.5px dashed var(--bd);font-family:inherit}
-.cell-off:hover{background:var(--bl);color:#1e40af;border-color:#93c5fd}
+.cell-off:hover{background:var(--bl);color:#c2410c;border-color:#f8c4ab}
 .cell-count{background:var(--acc);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700}
 .cell-count.low{background:var(--red)}
 .cell-count.mid{background:var(--amber)}
@@ -82,7 +82,7 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 .badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;margin-right:2px}
 .b-kyugi{background:#fee2e2;color:#991b1b}
 .b-july{background:#fef3c7;color:#92400e}
-.b-aug{background:#dbeafe;color:#1e40af}
+.b-aug{background:#dbeafe;color:#c2410c}
 .b-sep{background:#f3e8ff;color:#6b21a8}
 .b-ok{background:#dcfce7;color:#14532d}
 
