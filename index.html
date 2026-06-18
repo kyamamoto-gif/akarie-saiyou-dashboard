@@ -201,7 +201,7 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 </div>
 
 <!-- KPIサマリー -->
-<div class="sec"><div class="sec-ttl">📊 年間KPIサマリー（応募者管理シートより）</div><div class="kpi-g" id="kpi-g"><div class="loading"><div class="spinner"></div>データを取得してください</div></div></div>
+<div class="sec"><div class="sec-ttl">📊 年間KPIサマリー（応募者管理シートより）<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--t3);margin-left:6px">※入社数は非常勤を0.5換算</span></div><div class="kpi-g" id="kpi-g"><div class="loading"><div class="spinner"></div>データを取得してください</div></div></div>
 
 <!-- アラート -->
 <div class="sec"><div class="sec-ttl">⚠️ アラート</div><div id="alerts"></div></div>
@@ -234,7 +234,7 @@ body{font-family:'Hiragino Sans','Yu Gothic UI','Meiryo',sans-serif;background:v
 
 <!-- 月別進捗 -->
 <div class="sec">
-  <div class="sec-ttl">📅 月別進捗（応募月ベース・年間蓄積）</div>
+  <div class="sec-ttl">📅 月別進捗（応募月ベース・年間蓄積）<span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--t3);margin-left:6px">※入社数は非常勤を0.5換算（拠点・媒体・職種別の内訳は実人数）</span></div>
   <div class="card" style="overflow-x:auto"><table class="tbl" id="m-tbl"><tr><td style="color:var(--t3);font-size:12px">データを取得してください</td></tr></table></div>
 </div>
 
@@ -375,6 +375,21 @@ const fmtY = n => '¥'+fmt(n);
 const fmtYK= n => n>=10000000?'¥'+Math.round(n/1000000*10)/10+'M':(n>=100000?'¥'+Math.round(n/10000)+'万':fmtY(n));
 const pct  = (a,b)=>b>0?Math.round(a/b*100):0;
 const sgn  = n=>n>=0?'+':'';
+// 入社数：非常勤は0.5換算でカウント
+const PART_TIME_WEIGHT = 0.5;
+function ptJoins(ym){
+  const src = ym==='all' ? (APP_DATA&&APP_DATA.byJob) : (APP_DATA&&APP_DATA.monthlyJob&&APP_DATA.monthlyJob[ym]);
+  if(!src) return 0;
+  let pt=0;
+  Object.entries(src).forEach(([name,j])=>{ if(name.indexOf('非常勤')>=0) pt += (j.joins||0); });
+  return pt;
+}
+function adjJoinsMonth(ym){
+  const raw = (APP_DATA&&APP_DATA.joins&&APP_DATA.joins[ym])||0;
+  return Math.round((raw - PART_TIME_WEIGHT*ptJoins(ym))*2)/2;
+}
+// 入社数表示用（0.5刻みを保持。整数はそのまま）
+const fmtJ = n => (Math.round(n*2)/2).toLocaleString('ja-JP',{maximumFractionDigits:1});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PERSIST
@@ -508,7 +523,7 @@ function renderMonthly(){
     interviews = bm.interviews || 0;
     offers     = (APP_DATA.offers||{})[ym]        || 0;
     offerDeclines = (APP_DATA.offerDeclines||{})[ym] || 0;
-    joins      = (APP_DATA.joins||{})[ym]         || 0;
+    joins      = adjJoinsMonth(ym);
   }
 
   // ファネル描画
@@ -527,7 +542,7 @@ function renderMonthly(){
     return `<div class="fn-row">
       <span style="font-weight:700;font-size:11px">${fi.name}</span>
       <div><div class="bw"><div class="bf" style="width:${bp}%;background:${fi.color}"></div></div></div>
-      <span class="cr">${fmt(fi.count)}</span>
+      <span class="cr">${fmtJ(fi.count)}</span>
       <span class="cr">${i===0?'—':r+'%'}</span>
     </div>`;
   }).join('');
@@ -595,7 +610,7 @@ function renderMonthly(){
   // ── 採用コスト（月別は実績報告シートから）
   const mds = rp ? Object.entries(rp.media||{}).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
   const monthCost = isAll ? (rp?.totalCost||0) : (rp?.monthCosts?.[ym]?.cost||0);
-  const monthHired = isAll ? (computeFromApp()?.total?.joins||0) : ((APP_DATA?.joins||{})[ym]||0);
+  const monthHired = isAll ? (computeFromApp()?.total?.joins||0) : adjJoinsMonth(ym);
   const monthHireUnit = monthHired>0&&monthCost>0 ? Math.round(monthCost/monthHired) : 0;
 
   G('cost-card').innerHTML=`
@@ -767,7 +782,7 @@ function computeFromApp(){
       ages:          d.ages        || {},
       offers:        offersMap[ym] || 0,
       offerDeclines: declinesMap[ym] || 0,
-      joins:         joinsMap[ym]  || 0,
+      joins:         Math.round(((joinsMap[ym]||0) - PART_TIME_WEIGHT*ptJoins(ym))*2)/2,
     };
   });
 
@@ -1145,7 +1160,7 @@ async function openMonthReport(ym){
     ages:          bm[ym]?.ages        || {},
     offers:        offersMap[ym]       || 0,
     offerDeclines: declinesMap[ym]     || 0,
-    joins:         joinsMap[ym]        || 0,
+    joins:         adjJoinsMonth(ym),
     cost:          mc.cost             || 0,
     hireUnit:      mc.hired>0 ? Math.round(mc.cost/mc.hired) : 0,
   };
@@ -1156,7 +1171,7 @@ async function openMonthReport(ym){
     apps:       bm[prevYM]?.apps       || 0,
     interviews: bm[prevYM]?.interviews || 0,
     offers:     offersMap[prevYM]      || 0,
-    joins:      joinsMap[prevYM]       || 0,
+    joins:      Math.round(((joinsMap[prevYM]||0) - PART_TIME_WEIGHT*ptJoins(prevYM))*2)/2,
   } : null;
 
   // 年間累計
