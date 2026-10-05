@@ -610,8 +610,9 @@ function renderMonthly(){
   // ── 採用コスト（月別は実績報告シートから）
   const mds = rp ? Object.entries(rp.media||{}).filter(([,v])=>v.cost>0).sort((a,b)=>b[1].cost-a[1].cost) : [];
   const monthCost = isAll ? (rp?.totalCost||0) : (rp?.monthCosts?.[ym]?.cost||0);
-  const monthHired = isAll ? (computeFromApp()?.total?.joins||0) : adjJoinsMonth(ym);
-  const monthHireUnit = monthHired>0&&monthCost>0 ? Math.round(monthCost/monthHired) : 0;
+  // 採用単価は実人数ベース（非常勤も1名）
+  const monthHiredRaw = isAll ? (computeFromApp()?.total?.joinsRaw||0) : ((APP_DATA?.joins||{})[ym]||0);
+  const monthHireUnit = monthHiredRaw>0&&monthCost>0 ? Math.round(monthCost/monthHiredRaw) : 0;
 
   G('cost-card').innerHTML=`
     <div class="ir"><span class="ir-k">${isAll?'累計':'当月'}採用コスト</span><span class="ir-v neg">${fmtYK(monthCost)}</span></div>
@@ -783,6 +784,7 @@ function computeFromApp(){
       offers:        offersMap[ym] || 0,
       offerDeclines: declinesMap[ym] || 0,
       joins:         Math.round(((joinsMap[ym]||0) - PART_TIME_WEIGHT*ptJoins(ym))*2)/2,
+      joinsRaw:      joinsMap[ym]  || 0,
     };
   });
 
@@ -793,13 +795,14 @@ function computeFromApp(){
     acc.offers        += m.offers;
     acc.offerDeclines += m.offerDeclines;
     acc.joins         += m.joins;
+    acc.joinsRaw      += m.joinsRaw;
     acc.male          += m.male;
     acc.female        += m.female;
     Object.entries(m.ages||{}).forEach(([ag,n])=>{
       acc.ages[ag] = (acc.ages[ag]||0) + n;
     });
     return acc;
-  }, {apps:0,interviews:0,offers:0,offerDeclines:0,joins:0,male:0,female:0,ages:{}});
+  }, {apps:0,interviews:0,offers:0,offerDeclines:0,joins:0,joinsRaw:0,male:0,female:0,ages:{}});
 
   // ── エリア別（GAS側で全期間集計済み → そのまま使用）
   const areas = {};
@@ -901,7 +904,9 @@ function renderAll(){
   const totalJoins      = ap ? ap.total.joins       : (rp ? rp.totalHired  : 0);
   const totalCost       = rp ? rp.totalCost         : 0;
   const appUnit         = rp ? rp.appUnit           : CFG.appUnitLY;
-  const hireUnit        = totalJoins>0&&totalCost>0 ? Math.round(totalCost/totalJoins) : (rp ? rp.hireUnit : CFG.hireUnitLY);
+  const totalJoinsRaw   = ap ? ap.total.joinsRaw   : (rp ? rp.totalHired  : 0);
+  // 採用単価は実人数ベース（非常勤も1名）で算出
+  const hireUnit        = totalJoinsRaw>0&&totalCost>0 ? Math.round(totalCost/totalJoinsRaw) : (rp ? rp.hireUnit : CFG.hireUnitLY);
 
   const doneMonths = ap ? ap.monthRows.filter(m=>m.apps>0||m.joins>0).length : 1;
   const nd = doneMonths||1;
@@ -1310,7 +1315,8 @@ function openReport(){
   const tI=ap?ap.total.interviews:0, tO=ap?ap.total.offers:0;
   const tOD=ap?ap.total.offerDeclines:0;
   const tC=rp?rp.totalCost:0;
-  const hu=tJ>0&&tC>0?Math.round(tC/tJ):CFG.hireUnitLY;
+  const tJraw=ap?ap.total.joinsRaw:0;
+  const hu=tJraw>0&&tC>0?Math.round(tC/tJraw):CFG.hireUnitLY;
   const nd=ap?ap.monthRows.filter(m=>m.apps>0).length||1:1;
   const mLeft=Math.max(12-nd,0);
   const rem=CFG.target-tJ;
