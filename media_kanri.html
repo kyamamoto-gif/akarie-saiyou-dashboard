@@ -472,6 +472,7 @@ const daysSince = d => d ? Math.floor((Date.now()-new Date(d))/(86400000)) : 999
 let D = JSON.parse(JSON.stringify(DEFAULT)); // 初期値はDEFAULT
 let editTarget = null;
 let isSaving = false;
+let pendingSave = false; // 保存中に入った変更の再保存フラグ
 
 // ── GASからデータ読み込み
 async function loadFromGAS(){
@@ -497,31 +498,48 @@ async function loadFromGAS(){
   }
 }
 
-// ── GASにデータ保存（チャンク分割GET方式・preflightなし）
+// ── GASにデータ保存（単一POST方式。全データを1リクエストで送信）
 async function saveToGAS(){
-  if(isSaving) return;
+  if(isSaving){ pendingSave = true; return; }  // 保存中の変更は後でまとめて再保存
   isSaving = true;
   showSyncStatus('💾 保存中...');
+  const dataStr = JSON.stringify(D);
   try {
-    localStorage.setItem('akarie_media', JSON.stringify(D));
-    const dataStr = JSON.stringify(D);
-    const CHUNK_SIZE = 800;
-    const chunks = [];
-    for(let i = 0; i < dataStr.length; i += CHUNK_SIZE){
-      chunks.push(dataStr.slice(i, i + CHUNK_SIZE));
-    }
-    for(let i = 0; i < chunks.length; i++){
-      // GETのみ・ヘッダーなし → preflightが発生しない
-      const url = `${GAS_MEDIA_URL}?key=akarie2026&action=media_save&index=${i}&total=${chunks.length}&chunk=${encodeURIComponent(chunks[i])}`;
-      const res = await fetch(url);
-      const json = await res.json();
-      if(json.error){ showSyncStatus('❌ 保存エラー: '+json.error, true); return; }
-    }
+    localStorage.setItem('akarie_media', dataStr);
+    // text/plain扱いのPOST（カスタムヘッダー無し）→ CORSプリフライトが発生しない
+    const res = await fetch(`${GAS_MEDIA_URL}?key=akarie2026&action=media_save`, {
+      method: 'POST',
+      body: dataStr
+    });
+    const json = await res.json();
+    if(json.error){ showSyncStatus('❌ 保存エラー: '+json.error, true); return; }
     showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
   } catch(e) {
-    showSyncStatus('⚠️ ローカル保存のみ（通信エラー）', true);
+    // POST未対応（GAS未デプロイ）等の場合は旧チャンクGET方式へフォールバック
+    try {
+      await saveToGASChunked(dataStr);
+      showSyncStatus('✅ 最終同期: ' + new Date().toLocaleTimeString('ja-JP'));
+    } catch(e2) {
+      showSyncStatus('⚠️ ローカル保存のみ（通信エラー）', true);
+    }
   } finally {
     isSaving = false;
+    if(pendingSave){ pendingSave = false; saveToGAS(); }  // 保存中に入った変更を反映
+  }
+}
+
+// ── フォールバック：チャンク分割GET方式（旧方式）
+async function saveToGASChunked(dataStr){
+  const CHUNK_SIZE = 800;
+  const chunks = [];
+  for(let i = 0; i < dataStr.length; i += CHUNK_SIZE){
+    chunks.push(dataStr.slice(i, i + CHUNK_SIZE));
+  }
+  for(let i = 0; i < chunks.length; i++){
+    const url = `${GAS_MEDIA_URL}?key=akarie2026&action=media_save&index=${i}&total=${chunks.length}&chunk=${encodeURIComponent(chunks[i])}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if(json.error) throw new Error(json.error);
   }
 }
 
